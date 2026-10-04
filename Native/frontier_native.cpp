@@ -14,6 +14,7 @@
 #include "../player/player_position.h"
 #include "../hooks/polled_input/runtime.h"
 #include "../../state/account/account_state.h"
+#include "../../state/runtime/runtime.h"
 #include "../movement/movement_settings_store.h"
 #include "../../core/logging/log.h"
 namespace sunrise::client::frontier {
