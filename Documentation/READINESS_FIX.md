@@ -1,0 +1,9 @@
+# Native readiness fix
+
+Base Frontier: 7a6aff6e6bceb37f53e95925f23e5dab92ee61f9. Sunrise remains pinned to 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c.
+
+Pinned player_position.cpp publish_from() explicitly retains the published position when teleport::read_position() fails (body absent at rest/during load). poll() drops the snapshot/component on ownership loss; reset() drops both. Frontier incorrectly required a second successful body read on each tick. It now consumes snapshot(), requires present and finite coordinates, and retains the independent in-world/component/ownership checks. That published position feeds spatial output. No new snapshot timeout, offset, Lua dependency or lease change was introduced.
+
+The portable production guardian_ready predicate is exercised by the native contract harness: a fake publisher retains its prior position after a failed read, while absent snapshot/component, nonownership, out-of-world and NaN/infinity remain unready. The fake publisher is test-only; the production consumer uses the actual pinned Sunrise abstraction. A Python source test checks that wiring and rejects any direct body read in Frontier. Existing ABI, names, heartbeat, spatial and native policy suites remain required. CI compiles full Sunrise remotely with the existing bounded parallelism and native /WX policy. Neither game is launched for source validation.
+
+Local validation: 61 Python tests, 59 passed and 2 Windows-kernel tests skipped on Linux; portable native harness compiled with -Wall -Wextra -Werror, cached readiness and existing policy assertions passed; exact C++/Python ABI/name fixtures, package preflight and Python compileall passed. An initial existing fake-Core test encountered IPC busy at startup; the full repeat passed without any transport change. Remote Windows suite remains authoritative for the two kernel cases.

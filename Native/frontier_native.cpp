@@ -1,6 +1,7 @@
 // Source-level integration only. No new engine signatures, offsets or foreign threads.
 #include "frontier_native.h"
 #include "frontier_policy.h"
+#include "frontier_readiness.h"
 #include <Windows.h>
 #include <atomic>
 #include <algorithm>
@@ -100,9 +101,13 @@ void tick() noexcept {
  if(!enabled.load()||!TryAcquireSRWLockExclusive(&gate))return;
  if(!enabled.load()){ReleaseSRWLockExclusive(&gate);return;}
  using namespace destiny_frontier;
- const auto now=GetTickCount64();hooks::teleport::Vector position{};
+ const auto now=GetTickCount64();
+ const auto playerSnapshot=player::position::snapshot();
+ const auto position=playerSnapshot.position;
  void* component=player::position::component();
- const bool ready=hooks::bootflow::in_world()&&component&&hooks::teleport::owns_local_player(component)&&hooks::teleport::read_position(component,position)&&finite(position);
+ const bool inWorld=hooks::bootflow::in_world();
+ const bool ready=guardian_ready(inWorld,component!=nullptr,
+  inWorld&&component&&hooks::teleport::owns_local_player(component),playerSnapshot);
  const auto slice=hooks::bootflow::current_slice_set();
  policy.world(ready,slice.available&&slice.present?slice.index:-1,reinterpret_cast<std::uintptr_t>(component));
  const bool polling=now-lastPoll>=100;

@@ -30,3 +30,13 @@ class NativeSourceTests(unittest.TestCase):
         native=(ROOT/'Native/frontier_native.cpp').read_text(encoding='utf-8')
         self.assertNotIn('L"Local',native)
         for name in actual:self.assertIn(name,native)
+
+    def test_readiness_uses_published_snapshot_not_same_frame_body(self):
+        native=(ROOT/'Native/frontier_native.cpp').read_text(encoding='utf-8')
+        self.assertIn('const auto playerSnapshot=player::position::snapshot();',native)
+        self.assertIn('const auto position=playerSnapshot.position;',native)
+        self.assertIn('const bool inWorld=hooks::bootflow::in_world();',native)
+        self.assertIn('guardian_ready(inWorld,component!=nullptr,',native)
+        self.assertIn('inWorld&&component&&hooks::teleport::owns_local_player(component),playerSnapshot)',native)
+        self.assertIn('poll_spatial(now,ready,position)',native)
+        self.assertNotIn('read_position(',native)

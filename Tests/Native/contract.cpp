@@ -1,5 +1,8 @@
 // Standalone Frontier contract/policy, never loads or builds Sunrise.
 #include "../../Native/frontier_policy.h"
+#include "../../Native/frontier_readiness.h"
+#include <array>
+#include <limits>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -8,6 +11,25 @@
 using namespace destiny_frontier;
 void check(bool value){if(!value)throw std::runtime_error("Frontier contract assertion failed");}
 int main(int argc,char** argv){
+ // Fake position publisher models the pinned Sunrise failed-read retention contract.
+ struct Snapshot { std::array<float,3> position{};bool present=false; } cached;
+ auto publish=[&](bool bodyReadable,const std::array<float,3>& position){
+  if(bodyReadable){cached.position=position;cached.present=true;}return bodyReadable;
+ };
+ check(!guardian_ready(true,true,true,cached));
+ check(publish(true,{1.0f,2.0f,3.0f}));
+ check(guardian_ready(true,true,true,cached));
+ check(!publish(false,{0.0f,0.0f,0.0f})); // same-frame rigid body unavailable
+ check(guardian_ready(true,true,true,cached)&&cached.position[1]==2.0f);
+ check(!guardian_ready(false,true,true,cached));
+ check(!guardian_ready(true,false,true,cached));
+ check(!guardian_ready(true,true,false,cached));
+ cached.present=false;check(!guardian_ready(true,true,true,cached));cached.present=true;
+ for(int axis=0;axis<3;++axis){const float saved=cached.position[axis];
+  cached.position[axis]=std::numeric_limits<float>::infinity();check(!guardian_ready(true,true,true,cached));
+  cached.position[axis]=std::numeric_limits<float>::quiet_NaN();check(!guardian_ready(true,true,true,cached));
+  cached.position[axis]=saved;
+ }
  check(sizeof(SpatialSlot)==128&&sizeof(ControlBlock)==128);
  HoverPolicy p;p.world(true,3,10);const auto context=p.context;
  ControlBlock c{};c.magic=control_magic;c.version=1;c.bytes=128;c.headerBytes=64;
@@ -49,5 +71,5 @@ int main(int argc,char** argv){
   wire.nativeHeartbeat=6;wire.nativeIncarnation=7;wire.nativeContext=8;wire.ack=9;wire.nativeReady=1;wire.status=1;wire.hover=1;wire.hostIncarnation=10;wire.hostSequence=11;
   std::ofstream ctrl(std::string(argv[1])+".control",std::ios::binary);ctrl.write(reinterpret_cast<const char*>(&wire),128);check(bool(ctrl));
   std::ofstream out(argv[1],std::ios::binary);out.write(reinterpret_cast<const char*>(&slot),128);check(bool(out));}
- std::puts("PASS: native policy, expiry, context, replay refusal, region predicate and spatial ABI (no games)");
+ std::puts("PASS: cached Guardian readiness, native policy, expiry, context, replay refusal, region predicate and spatial ABI (no games)");
 }
