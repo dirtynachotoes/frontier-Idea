@@ -1,6 +1,6 @@
 # Known limits
 
-The new native consumer is source/static/unit checked, but is not yet compiled remotely or runtime-accepted at the source-package checkpoint. The earlier spatial DLL's compile success is retained as prior evidence only.
+The first native remote run 37227359793 compiled successfully but was withheld during artifact audit: MSVC warned that a native mapping literal contained an invalid escape, dropping its Local\ separator. That artifact is NOT installable. The corrected consumer centralizes wide raw names in the portable protocol header, compares actual compiled C++ names with Python, and treats Frontier native warnings as errors. Only the replacement run's complete candidate is valid. The earlier spatial DLL's compile success remains a closed historical gate. Runtime acceptance is still pending.
 
 Guardian Scout Link exports a real native flight lease/pose and uses an NMS walking-assist translation. It does not put a rendered Guardian on NMS terrain, ingest NMS collisions, forward ordinary host movement keys to Guardian flight, transfer damage, implement weapons/abilities, or produce guest-authoritative NMS position yet. Do not describe the 1.25 host assist as authentic Destiny velocity.
 

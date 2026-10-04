@@ -6,6 +6,8 @@ The existing workflow path .github/workflows/build-sunrise-spatial.yml is replac
 
 Do not dispatch a duplicate if the final commit already started its build. If Work cannot start it, the exactly one next build action after the canonical commit is in main: open Actions → Build Destiny Frontier Native Guest → Run workflow (main). CI runs Python 3.10 static/unit/fake checks, real Windows mutex checks, the small native contract harness and exact C++/Python wire-fixture comparison. It then clones Sunrise at 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c, uses an LF-preserving source checkout and verifies each patched file SHA against Native/source-lock.json, applies the complete integration patch, and builds Release x64 remotely.
 
+The first native run 37227359793 was withheld after compile-warning audit; never install it. The final correction build includes actual compiled IPC name equality and Frontier-only warning-as-error enforcement. It removes the withheld artifact after preparing its replacement.
+
 One artifact, **DestinyFrontier-Windows-x64**, contains the canonical Frontier tree, the complete patched matching Sunrise source under Source/Sunrise, the compiled DLL/PDB under Adapters/Sunrise/Native, DLL SHA/build provenance and one candidate file-hash manifest. No commercial game files are packaged. Install only that whole candidate after CI succeeds, once.
 
 To reproduce source preparation without compiling: Tools/prepare_sunrise_frontier.py <clean pinned source checkout>. This modifies only that disposable source tree. Wrong revision, dirty tree or reviewed-file hash differences are refused before patch application. For maintenance, update reviewed pins/patches together; never loosen the guards to get green CI.

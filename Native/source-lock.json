@@ -9,6 +9,7 @@
     "Sunrise/src/client/movement/movement_settings_store.h": "06c12370422da23658eaab5679b66881c09eb2226a9edb09b5e82dd36a6ab4db",
     "Sunrise/src/client/movement/movement_settings_store.cpp": "d50c9e8e6353a9f29e63cbd69789060773ca8a1b12428561c8989260baadeaaa",
     "Sunrise/src/client/hooks/fly/fly.cpp": "daf1aba0eaa7ad3f1da11c5e98752893d6dd7367f419d751666988b28fa44cbf",
-    "Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp": "8d08e50f41117e40e261a853af2b3ad784f04bce59586257efeb6ad815bb856c"
+    "Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp": "8d08e50f41117e40e261a853af2b3ad784f04bce59586257efeb6ad815bb856c",
+    "CMakeLists.txt": "627cb665fd87f04b6ded2eff32da03c4c856aa47fca4c7c8261b268697e808dd"
   }
 }

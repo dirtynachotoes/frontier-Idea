@@ -42,9 +42,6 @@ std::uint32_t spatialSequence=0;
 bool lastHover=false;
 std::uint64_t lastAck=0;
 std::uint32_t lastStatus=idle;
-constexpr wchar_t bridgeName[]=L"Local\DestinyFrontier_Probe_v1",bridgeMutex[]=L"Local\DestinyFrontier_Probe_v1_mutex";
-constexpr wchar_t spatialName[]=L"Local\DestinyFrontier_Spatial_v2",spatialMutex[]=L"Local\DestinyFrontier_Spatial_v2_mutex";
-constexpr wchar_t controlName[]=L"Local\DestinyFrontier_Control_v1",controlMutex[]=L"Local\DestinyFrontier_Control_v1_mutex";
 bool finite(const hooks::teleport::Vector& v) noexcept {return std::isfinite(v[0])&&std::isfinite(v[1])&&std::isfinite(v[2]);}
 bool peer_live(std::uint64_t now) noexcept {
  return legacy.header.magic==bridge_magic&&legacy.header.version==1&&legacy.header.epoch&&fresh(now,legacy.header.heartbeat)&&

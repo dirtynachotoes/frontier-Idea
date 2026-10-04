@@ -24,6 +24,8 @@ def validate():
     assert 'owns_local_player(component)' in native and 'read_position(component,position)' in native
     assert 'CreateThread' not in native and 'edz_freeroam' not in native
     assert 'runtime_get()' in patch and 'g_frontierHoverUntil' in patch
+    assert 'COMPILE_OPTIONS "/WX"' in patch
+    assert 'constexpr wchar_t' not in native and 'bridgeName' in native
     workflow=(ROOT/'.github/workflows/build-sunrise-spatial.yml').read_text()
     assert '--parallel 1' in workflow and 'windows-2025-vs2026' in workflow
     lock=json.loads((ROOT/'Documentation/PRESERVED_HASHES.json').read_text())

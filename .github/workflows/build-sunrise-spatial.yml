@@ -12,6 +12,7 @@ on:
       - '.github/workflows/build-sunrise-spatial.yml'
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: destiny-frontier-native-guest
   cancel-in-progress: false
@@ -68,6 +69,18 @@ jobs:
         run: |
           python Tools/package_candidate.py --sunrise-output Sunrise-Probe/build/x64/Release --output DestinyFrontier
           if ($LASTEXITCODE) { throw 'Candidate packaging failed' }
+      - name: Remove only the withheld invalid candidate after replacement is ready
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = 'application/vnd.github+json' }
+          $url = 'https://api.github.com/repos/dirtynachotoes/frontier-Idea/actions/artifacts/11313161574'
+          try {
+            Invoke-RestMethod -Method Delete -Uri $url -Headers $headers | Out-Null
+          } catch {
+            if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: DestinyFrontier-Windows-x64

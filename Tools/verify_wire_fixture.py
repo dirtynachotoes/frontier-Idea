@@ -9,4 +9,9 @@ if a.fixture.read_bytes()!=expected:raise SystemExit('FAIL: C++/Python wire byte
 from frontier.control import CORE,NATIVE
 expected_control=CORE.pack(0x43465444,1,128,64,1,2,3,4,5,1,3)+NATIVE.pack(6,7,8,9,1,1,1,0,10,11)
 if Path(str(a.fixture)+'.control').read_bytes()!=expected_control:raise SystemExit('FAIL: control wire bytes differ')
-print('PASS: exact C++/Python 128-byte spatial AND control wire fixtures')
+from frontier.ipc import NAME as bridge_name
+from frontier.spatial import NAME as spatial_name
+from frontier.control import NAME as control_name
+expected_names=''.join(name+'\n'+name+'_mutex\n' for name in (bridge_name,spatial_name,control_name)).encode('ascii')
+if Path(str(a.fixture)+'.names').read_bytes()!=expected_names:raise SystemExit('FAIL: actual compiled C++/Python IPC names differ')
+print('PASS: exact C++/Python spatial/control wire fixtures AND actual compiled IPC mapping/mutex names')

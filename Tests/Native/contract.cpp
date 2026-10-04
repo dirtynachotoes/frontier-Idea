@@ -38,6 +38,12 @@ int main(int argc,char** argv){
  slot.sequence=0x12345678;slot.flags=31;slot.context=0x1020304050607080ULL;
  for(int i=0;i<3;++i){slot.playerPosition[i]=float(i+1);slot.cameraPosition[i]=float(i+4);slot.forward[i]=float(i+7);slot.up[i]=float(i+10);slot.right[i]=float(i+13);}
  if(argc==2){
+  std::ofstream names(std::string(argv[1])+".names",std::ios::binary);
+  for(const wchar_t* name:{bridgeName,bridgeMutex,spatialName,spatialMutex,controlName,controlMutex}){
+   for(const wchar_t* c=name;*c;++c) { names.put(static_cast<char>(*c)); }
+   names.put('\n');
+  }
+  check(bool(names));
   ControlBlock wire{};wire.magic=control_magic;wire.version=1;wire.bytes=128;wire.headerBytes=64;
   wire.epoch=1;wire.heartbeat=2;wire.request=3;wire.expectedIncarnation=4;wire.expectedContext=5;wire.opcode=1;wire.flags=3;
   wire.nativeHeartbeat=6;wire.nativeIncarnation=7;wire.nativeContext=8;wire.ack=9;wire.nativeReady=1;wire.status=1;wire.hover=1;wire.hostIncarnation=10;wire.hostSequence=11;

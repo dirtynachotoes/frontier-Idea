@@ -166,3 +166,15 @@
      return 0;
  }
  
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -137,3 +137,9 @@
+ set_source_files_properties(Sunrise/vendor/sqlite/sqlite3.c PROPERTIES
+     COMPILE_DEFINITIONS "SQLITE_OMIT_LOAD_EXTENSION;SQLITE_THREADSAFE=1"
+ )
++
++# Frontier native code: compiler warnings must never become a publishable candidate.
++if(MSVC)
++    set_source_files_properties("Sunrise/src/client/frontier/frontier_native.cpp"
++        PROPERTIES COMPILE_OPTIONS "/WX")
++endif()

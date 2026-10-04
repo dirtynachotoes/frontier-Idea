@@ -2,6 +2,13 @@
 #include <cstddef>
 #include <cstdint>
 namespace destiny_frontier {
+constexpr wchar_t bridgeName[]=LR"(Local\DestinyFrontier_Probe_v1)";
+constexpr wchar_t bridgeMutex[]=LR"(Local\DestinyFrontier_Probe_v1_mutex)";
+constexpr wchar_t spatialName[]=LR"(Local\DestinyFrontier_Spatial_v2)";
+constexpr wchar_t spatialMutex[]=LR"(Local\DestinyFrontier_Spatial_v2_mutex)";
+constexpr wchar_t controlName[]=LR"(Local\DestinyFrontier_Control_v1)";
+constexpr wchar_t controlMutex[]=LR"(Local\DestinyFrontier_Control_v1_mutex)";
+static_assert(bridgeName[5]==L'\\' && spatialName[5]==L'\\' && controlName[5]==L'\\');
 constexpr std::uint64_t timeout_ms = 2000;
 constexpr std::uint32_t bridge_magic = 0x52465444;
 struct Header { std::uint32_t magic, version; std::uint64_t epoch, heartbeat, pad; };

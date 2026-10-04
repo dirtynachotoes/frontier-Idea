@@ -17,3 +17,16 @@ class NativeSourceTests(unittest.TestCase):
         # Override is applied only to the returned copy; the persistent get remains unchanged.
         self.assertIn('if (g_frontierHoverUntil && GetTickCount64() < g_frontierHoverUntil) snapshot.flyEnabled = true;',patch)
         self.assertNotIn('+    g_settings.flyEnabled',patch)
+    def test_all_native_mapping_names_match_python_exactly(self):
+        import re
+        import sys
+        sys.path.insert(0,str(ROOT/'Core'))
+        from frontier.ipc import NAME as bridge
+        from frontier.spatial import NAME as spatial
+        from frontier.control import NAME as control
+        protocol=(ROOT/'Native/frontier_protocol.h').read_text(encoding='utf-8')
+        actual=dict(re.findall(r'constexpr wchar_t (\w+)\[\]=LR"\(([^)]*)\)";',protocol))
+        self.assertEqual(actual,dict(bridgeName=bridge,bridgeMutex=bridge+'_mutex',spatialName=spatial,spatialMutex=spatial+'_mutex',controlName=control,controlMutex=control+'_mutex'))
+        native=(ROOT/'Native/frontier_native.cpp').read_text(encoding='utf-8')
+        self.assertNotIn('L"Local',native)
+        for name in actual:self.assertIn(name,native)
