@@ -108,7 +108,7 @@ int main(int argc,char** argv){
  if(argc==2){
   std::ofstream names(std::string(argv[1])+".names",std::ios::binary);
   for(const wchar_t* name:{bridgeName,bridgeMutex,spatialName,spatialMutex,controlName,controlMutex}){
-   for(const wchar_t* c=name;*c;++c) { names.put(static_cast<char>(*c)); }
+   for(const wchar_t* character=name;*character;++character) { names.put(static_cast<char>(*character)); }
    names.put('\n');
   }
   check(bool(names));
