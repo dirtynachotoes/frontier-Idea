@@ -25,3 +25,5 @@ The existing Sunrise Anti-AFK setting remains unchanged and should remain enable
 Tests/test_motion.py exercises real mapping routing and result consumers with fake endpoints. Tests/test_nms_motion.py executes the actual NMS callbacks against typed fake objects, proving measured results replace the host step, offsets survive, duplicate callback actuation is prevented, and stale/focus-loss/transition/foreign-player cases are rejected. Tests/Native/contract.cpp compiles only a tiny portable math/policy/ABI harness with warnings as errors. Full Sunrise compilation happens only in bounded remote CI.
 
 Pinned Sunrise: 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c. Reviewed maintained NMSpy source and hashes are in NMS_MOTION_SOURCE_LOCK.json (API 180383.0, pyMHF 0.2.4). Existing runtime binary validation remains required.
+
+Mutex contention does not renew or invalidate an otherwise valid motion packet: native and host retain the last atomically read packet only until its original lease expires. Abandoned native mappings invalidate use. There is no added grace period, heartbeat refresh or retry.

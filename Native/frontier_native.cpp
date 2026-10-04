@@ -40,6 +40,7 @@ destiny_frontier::MotionKeys motionKeys;
 destiny_frontier::MotionAccumulator motionAccumulator;
 std::atomic_uint64_t motionScanReads{0};
 std::uint64_t motionSequence=0;
+MotionHeader motionHeader{};MotionIntent motionIntent{};
 SRWLOCK gate=SRWLOCK_INIT;
 std::atomic_bool enabled{false},cachedConnected{false},cachedLive{false};
 std::atomic_uint32_t sequence{0},cachedTarget{0};
@@ -100,9 +101,11 @@ void publish_status(std::uint64_t now,bool ready,bool hostReady,std::uint32_t re
 }
 void poll_motion(std::uint64_t now,bool ready,bool hostReady,const hooks::teleport::Vector& position) noexcept {
  MotionKeys nextKeys{};MotionHeader header{};MotionIntent intent{};bool valid=false;
- if(motion.open(motionName,motionMutex,256,false)&&motion.acquire()){
-  std::memcpy(&header,motion.view,64);std::memcpy(&intent,motion.view+128,64);motion.release();
-  valid=ready&&hostReady&&peer_live(now)&&header.epoch==legacy.header.epoch&&command.epoch==header.epoch&&fresh(now,command.heartbeat)&&!policy.hovering&&!movement::get().flyEnabled&&
+ if(motion.open(motionName,motionMutex,256,false)){
+  if(motion.acquire()){std::memcpy(&motionHeader,motion.view,64);std::memcpy(&motionIntent,motion.view+128,64);motion.release();}
+  // A busy mutex is not peer loss. Retain the last atomic packet only under its ORIGINAL lease.
+  header=motionHeader;intent=motionIntent;
+  valid=motion.view&&ready&&hostReady&&peer_live(now)&&header.epoch==legacy.header.epoch&&command.epoch==header.epoch&&fresh(now,command.heartbeat)&&!policy.hovering&&!movement::get().flyEnabled&&
    hooks::polled_input::is_installed()&&motion_valid(header,intent,now,host.incarnation)&&
    (host.flags&29U)==29U;
  }
@@ -209,6 +212,6 @@ void shutdown() noexcept {
  AcquireSRWLockExclusive(&motionKeysGate);motionKeys={};ReleaseSRWLockExclusive(&motionKeysGate);motionAccumulator.reset();
  movement::set_frontier_hover(false,0);cachedConnected.store(false);cachedLive.store(false);cachedUntil.store(0);
  if(control.view&&control.acquire()){std::memset(control.view+64,0,64);control.release();}
- bridge.close();spatial.close();control.close();motion.close();ReleaseSRWLockExclusive(&gate);
+ bridge.close();spatial.close();control.close();motion.close();motionHeader={};motionIntent={};ReleaseSRWLockExclusive(&gate);
 }
 }

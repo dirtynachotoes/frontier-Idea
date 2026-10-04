@@ -52,3 +52,20 @@ class MotionTests(unittest.TestCase):
             self.assertEqual(host.exchange(99,status),(0.,0.,0.));self.assertEqual(mapping.intent[3],3)
             keys.value=(False,False,0);self.assertIsNone(host.exchange(99,status));self.assertEqual(mapping.intent[3],0)
             keys.value=(True,True,0);self.assertIsNone(host.exchange(99,status));self.assertFalse(host.armed)
+
+    def test_busy_motion_mutex_reuses_only_original_valid_result_lease(self):
+        from frontier.motion_host import HostMotion
+        class Keys:
+            def sample(self):return True,False,1
+        class Mapping:
+            def host_exchange(self,*args):return None
+        host=HostMotion(Keys(),Mapping());host.armed=True
+        host.last_header=(MAGIC,1,256,64,7,10000,1)
+        host.last_result=(10000,50,3,1,0.,0.,0.,1,1,1)
+        status=dict(ready=True,incarnation=50,context=3,hover=False)
+        with patch('frontier.motion_host.ticks',return_value=10001):
+            self.assertEqual(host.exchange(99,status),(0.,0.,0.))
+            self.assertEqual(host.valid_until,12000)
+            self.assertEqual(host.last_header[5],10000)
+        with patch('frontier.motion_host.ticks',return_value=12000):
+            self.assertIsNone(host.exchange(99,status));self.assertFalse(host.armed)

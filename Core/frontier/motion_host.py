@@ -22,7 +22,7 @@ class MovementKeys(HostKey):
 class HostMotion:
     def __init__(self,key_reader=None,mapping=None):
         self.keys=key_reader or MovementKeys();self.mapping=mapping;self.consumer=ResultConsumer()
-        self.armed=False;self.sequence=0;self.last_result=None;self.valid_until=0
+        self.armed=False;self.sequence=0;self.last_result=None;self.last_header=None;self.valid_until=0
     def exchange(self,incarnation,status):
         if self.mapping is None:self.mapping=MotionMapping()
         self.valid_until=0
@@ -30,8 +30,10 @@ class HostMotion:
         if edge:self.armed=not self.armed
         self.sequence+=1
         data=self.mapping.host_exchange(incarnation,self.sequence,keys,3 if focused and self.armed else 0)
-        if data is None:return None
-        header,result=data;now=ticks()
+        if data is None:
+            if self.last_header is None:return None
+            data=(self.last_header,self.last_result) # Original leases; never refresh cached timestamps.
+        header,result=data;self.last_header=header;now=ticks()
         core_motion=header[:4]==(MAGIC,1,256,64) and header[4] and header[6]==1 and fresh(now,header[5])
         if not core_motion:self.armed=False
         self.last_result=result
