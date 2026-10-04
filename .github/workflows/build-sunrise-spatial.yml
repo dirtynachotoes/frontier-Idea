@@ -1,0 +1,64 @@
+name: Build Sunrise Frontier Spatial Probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout Destiny Frontier CI package
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        shell: pwsh
+        run: |
+          cmake --version
+          & "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+
+      - name: Clone pinned Sunrise
+        shell: pwsh
+        run: |
+          git clone https://github.com/stanuwu/Sunrise.git Sunrise-Probe
+          git -C Sunrise-Probe checkout 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c
+          if ((git -C Sunrise-Probe rev-parse HEAD).Trim() -ne '1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c') { throw 'Wrong Sunrise revision' }
+
+      - name: Apply Frontier spatial probe
+        shell: pwsh
+        run: |
+          python Tools/prepare_sunrise_spatial.py Sunrise-Probe
+          git -C Sunrise-Probe diff -- Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp Sunrise/src/server/activity/mission/frontier_probe.h
+
+      - name: Configure Release x64
+        shell: pwsh
+        run: |
+          cmake -S Sunrise-Probe -B Sunrise-Probe/build -A x64
+
+      - name: Build Release x64 with bounded parallelism
+        shell: pwsh
+        run: |
+          cmake --build Sunrise-Probe/build --config Release --parallel 1
+
+      - name: Verify output and hash
+        shell: pwsh
+        run: |
+          $dll = 'Sunrise-Probe/build/x64/Release/steam_api64.dll'
+          if (!(Test-Path $dll)) { throw "Expected DLL not found: $dll" }
+          Get-Item $dll | Format-List FullName,Length,LastWriteTime
+          Get-FileHash $dll -Algorithm SHA256 | Format-List
+          Get-FileHash $dll -Algorithm SHA256 |
+            Select-Object Algorithm,Hash,Path |
+            ConvertTo-Json |
+            Set-Content Sunrise-Probe/build/x64/Release/steam_api64.sha256.json
+
+      - name: Upload compiled spatial probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sunrise-Frontier-Spatial-Release-x64
+          if-no-files-found: error
+          path: |
+            Sunrise-Probe/build/x64/Release/steam_api64.dll
+            Sunrise-Probe/build/x64/Release/steam_api64.pdb
+            Sunrise-Probe/build/x64/Release/steam_api64.sha256.json
