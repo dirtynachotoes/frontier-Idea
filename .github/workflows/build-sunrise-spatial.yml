@@ -1,94 +1,76 @@
-name: Build Sunrise Frontier Spatial Probe
-
+name: Build Destiny Frontier Native Guest
 on:
   workflow_dispatch:
-
+  push:
+    branches: [main]
+    paths:
+      - 'Native/**'
+      - 'Core/**'
+      - 'Adapters/**'
+      - 'Tools/**'
+      - 'Tests/**'
+      - '.github/workflows/build-sunrise-spatial.yml'
+permissions:
+  contents: read
+concurrency:
+  group: destiny-frontier-native-guest
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: windows-2025-vs2026
     timeout-minutes: 90
-
+    env:
+      PYTHONPATH: ${{ github.workspace }}/Core
+      CMAKE_BUILD_PARALLEL_LEVEL: '1'
     steps:
-      - name: Checkout Destiny Frontier CI package
-        uses: actions/checkout@v4
-
-      - name: Show toolchain
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Python static and game-free checks
         shell: pwsh
         run: |
-          cmake --version
-
-          $candidates = @(
-            "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe",
-            "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe"
-          )
-
-          $vswhere = $candidates |
-            Where-Object { Test-Path $_ } |
-            Select-Object -First 1
-
-          if (-not $vswhere) {
-            throw "vswhere.exe was not found on the GitHub Windows runner"
-          }
-
-          Write-Host "VSWhere: $vswhere"
-          & $vswhere -latest -products * -property installationPath
-
-      - name: Clone pinned Sunrise
+          python Tools/verify_ci_package.py
+          if ($LASTEXITCODE) { throw 'Static checks failed' }
+          python -W error::ResourceWarning -m compileall -q Core Adapters Tools Tests
+          if ($LASTEXITCODE) { throw 'Python compilation failed' }
+          python -W error::ResourceWarning -m unittest discover -s Tests -v
+          if ($LASTEXITCODE) { throw 'Unit/fake endpoint checks failed' }
+      - name: Build and check only the small portable protocol harness
         shell: pwsh
         run: |
-          git clone https://github.com/stanuwu/Sunrise.git Sunrise-Probe
+          cmake -S Tests/Native -B Native-Contract-Build -A x64
+          if ($LASTEXITCODE) { throw 'Contract configure failed' }
+          cmake --build Native-Contract-Build --config Release --parallel 1
+          if ($LASTEXITCODE) { throw 'Contract compile failed' }
+          & ./Native-Contract-Build/Release/frontier_contract.exe Native-Contract-Build/spatial-slot.bin
+          if ($LASTEXITCODE) { throw 'Native contract failed' }
+          python Tools/verify_wire_fixture.py Native-Contract-Build/spatial-slot.bin
+          if ($LASTEXITCODE) { throw 'Cross-language ABI mismatch' }
+      - name: Clone and patch reviewed Sunrise source
+        shell: pwsh
+        run: |
+          git -c core.autocrlf=false clone https://github.com/stanuwu/Sunrise.git Sunrise-Probe
+          if ($LASTEXITCODE) { throw 'Clone failed' }
           git -C Sunrise-Probe checkout 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c
-
-          $head = (git -C Sunrise-Probe rev-parse HEAD).Trim()
-          if ($head -ne '1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c') {
-            throw "Wrong Sunrise revision: $head"
-          }
-
-      - name: Apply Frontier spatial probe
-        shell: pwsh
-        run: |
-          python Tools/prepare_sunrise_spatial.py Sunrise-Probe
-
-          git -C Sunrise-Probe diff -- `
-            Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp `
-            Sunrise/src/server/activity/mission/frontier_probe.h
-
-      - name: Configure Release x64
+          if ($LASTEXITCODE) { throw 'Checkout failed' }
+          python Tools/prepare_sunrise_frontier.py Sunrise-Probe
+          if ($LASTEXITCODE) { throw 'Source patch failed' }
+      - name: Compile complete native guest remotely with bounded parallelism
         shell: pwsh
         run: |
           cmake -S Sunrise-Probe -B Sunrise-Probe/build -A x64
-
-      - name: Build Release x64 with bounded parallelism
-        shell: pwsh
-        run: |
+          if ($LASTEXITCODE) { throw 'Sunrise configure failed' }
           cmake --build Sunrise-Probe/build --config Release --parallel 1
-
-      - name: Verify output and hash
+          if ($LASTEXITCODE) { throw 'Sunrise compile failed' }
+      - name: Make one consolidated install candidate
         shell: pwsh
         run: |
-          $dll = 'Sunrise-Probe/build/x64/Release/steam_api64.dll'
-
-          if (!(Test-Path $dll)) {
-            throw "Expected DLL not found: $dll"
-          }
-
-          Get-Item $dll |
-            Format-List FullName, Length, LastWriteTime
-
-          Get-FileHash $dll -Algorithm SHA256 |
-            Format-List
-
-          Get-FileHash $dll -Algorithm SHA256 |
-            Select-Object Algorithm, Hash, Path |
-            ConvertTo-Json |
-            Set-Content Sunrise-Probe/build/x64/Release/steam_api64.sha256.json
-
-      - name: Upload compiled spatial probe
-        uses: actions/upload-artifact@v4
+          python Tools/package_candidate.py --sunrise-output Sunrise-Probe/build/x64/Release --output DestinyFrontier
+          if ($LASTEXITCODE) { throw 'Candidate packaging failed' }
+      - uses: actions/upload-artifact@v4
         with:
-          name: Sunrise-Frontier-Spatial-Release-x64
+          name: DestinyFrontier-Windows-x64
           if-no-files-found: error
-          path: |
-            Sunrise-Probe/build/x64/Release/steam_api64.dll
-            Sunrise-Probe/build/x64/Release/steam_api64.pdb
-            Sunrise-Probe/build/x64/Release/steam_api64.sha256.json
+          include-hidden-files: true
+          path: DestinyFrontier/

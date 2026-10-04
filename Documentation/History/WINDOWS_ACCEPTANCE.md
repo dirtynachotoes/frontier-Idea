@@ -1,0 +1,9 @@
+# Windows heartbeat acceptance
+
+1. Run INSTALL.md's lightweight commands first. Expected 47 tests, OK, no intentional Windows skips. No compiler/games required for this step.
+2. Run guarded source dry-run, close all three runtime processes, then apply only if hashes match. Keep verified source backups. Restart the already proven setup; no native rebuild, new hook installation or mod hot reload.
+3. Repeat manual pulse -> Sunrise phase and Sunrise region -> NMS speed. Record IPC status/core_age_ms/peer_age_ms alongside speed logs. busy_cached must not briefly reset an odd-target boost. A heartbeat_stale reason in Core is different evidence from a busy poll in NMS.
+4. On disposable TEST state, orderly-stop the Sunrise activity/process; verify baseline restoration at original peer expiry, or immediately when an observed live=false/unready state is delivered. Separately stop Core; verify restoration when epoch is cleared or original heartbeat expires. Detection happens on eligible NMS update callbacks; suspended callbacks cannot apply any setter. Restart and verify recovery. Do not kill a process while it owns the mutex; the native abandoned-mutex test covers refusal separately.
+5. If a target=0 flicker persists, preserve both logs and timestamps. Do not increase timeout or add sleeps. Use status/age evidence to distinguish busy_expired, core_stale, peer_stale, not-ready and command-not-live, then investigate scheduler/lock hold time. The old episode cause cannot be inferred from speed logs alone.
+
+After this gate: source-verified read-only position/orientation/world-context telemetry, axes/units/origins and transition/lifetime measurements on each engine. No transforms, camera writes, teleports or collision coupling yet. Same-space integration remains a separate unverified gate.

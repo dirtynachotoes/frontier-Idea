@@ -1,0 +1,54 @@
+HISTORICAL WINDOWS RESOURCE REPAIR RECORD — current heartbeat results/provenance are in HEARTBEAT_FIXES.md and Documentation/HEARTBEAT_TEST_RESULTS.txt.
+
+Environment: Linux CPython 3.12.14
+Native Windows execution: NOT AVAILABLE
+Python 3.10 execution: NOT AVAILABLE
+
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3 -m compileall -q Core Adapters Tools Tests
+Exit code: 0
+
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3 -m unittest discover -s Tests -v
+test_log_open_failure_closes_mapping_and_store (test_core_lifecycle.CoreLifecycleTests.test_log_open_failure_closes_mapping_and_store) ... ok
+test_mapping_constructor_failure_closes_store (test_core_lifecycle.CoreLifecycleTests.test_mapping_constructor_failure_closes_store) ... ok
+test_shutdown_reset_failure_closes_all_resources (test_core_lifecycle.CoreLifecycleTests.test_shutdown_reset_failure_closes_all_resources) ... ok
+test_stop_marker_requires_isolated_backend (test_core_lifecycle.CoreLifecycleTests.test_stop_marker_requires_isolated_backend) ... ok
+test_corruption_refused (test_probe.PersistenceTests.test_corruption_refused) ... ok
+test_future_schema_refused (test_probe.PersistenceTests.test_future_schema_refused) ... ok
+test_restart_dedup_regression_backup (test_probe.PersistenceTests.test_restart_dedup_regression_backup) ... ok
+test_abi_and_invalid_or_stale_header (test_probe.TransportTests.test_abi_and_invalid_or_stale_header) ... ok
+test_real_core_with_explicit_fake_adapter_packets_and_restart (test_probe.TransportTests.test_real_core_with_explicit_fake_adapter_packets_and_restart) ... ok
+test_close_during_lock_refused_then_context_cleans_up (test_resource_safety.MappingResourceTests.test_close_during_lock_refused_then_context_cleans_up) ... ok
+test_constructor_mmap_failure_closes_file (test_resource_safety.MappingResourceTests.test_constructor_mmap_failure_closes_file) ... ok
+test_contending_thread_skips_then_acquires (test_resource_safety.MappingResourceTests.test_contending_thread_skips_then_acquires) ... ok
+test_invalid_file_size_refused_without_handle (test_resource_safety.MappingResourceTests.test_invalid_file_size_refused_without_handle) ... ok
+test_repeated_lock_release_and_exception (test_resource_safety.MappingResourceTests.test_repeated_lock_release_and_exception) ... ok
+test_two_views_never_retruncate_existing_mapping (test_resource_safety.MappingResourceTests.test_two_views_never_retruncate_existing_mapping) ... ok
+test_named_mapping_views_and_close (test_resource_safety.NativeWindowsTests.test_named_mapping_views_and_close) ... skipped 'Requires native Windows kernel; mocked Win32 unit tests run on all platforms'
+test_real_abandoned_mutex_released_and_refused (test_resource_safety.NativeWindowsTests.test_real_abandoned_mutex_released_and_refused) ... skipped 'Requires native Windows kernel; mocked Win32 unit tests run on all platforms'
+test_active_transaction_backup_refused_without_hanging (test_resource_safety.StoreResourceTests.test_active_transaction_backup_refused_without_hanging) ... ok
+test_backup_destination_closed_before_promotion (test_resource_safety.StoreResourceTests.test_backup_destination_closed_before_promotion) ... ok
+test_constructor_initial_backup_failure_closes_source (test_resource_safety.StoreResourceTests.test_constructor_initial_backup_failure_closes_source) ... ok
+test_failed_close_backup_still_closes_source (test_resource_safety.StoreResourceTests.test_failed_close_backup_still_closes_source) ... ok
+test_future_constructor_closes_retained_connection (test_resource_safety.StoreResourceTests.test_future_constructor_closes_retained_connection) ... ok
+test_idempotent_close_preserves_committed_state (test_resource_safety.StoreResourceTests.test_idempotent_close_preserves_committed_state) ... ok
+test_promotion_failure_cleans_partial_and_preserves_source (test_resource_safety.StoreResourceTests.test_promotion_failure_cleans_partial_and_preserves_source) ... ok
+test_store_context_exception_releases_source (test_resource_safety.StoreResourceTests.test_store_context_exception_releases_source) ... ok
+test_abandoned_mutex_released_before_refusal (test_resource_safety.WindowsLockAbstractionTests.test_abandoned_mutex_released_before_refusal) ... ok
+test_acquire_timeout_release_idempotent_close (test_resource_safety.WindowsLockAbstractionTests.test_acquire_timeout_release_idempotent_close) ... ok
+test_create_failure_reported (test_resource_safety.WindowsLockAbstractionTests.test_create_failure_reported) ... ok
+test_release_and_close_errors_propagate (test_resource_safety.WindowsLockAbstractionTests.test_release_and_close_errors_propagate) ... ok
+test_wait_failure_reported_without_release (test_resource_safety.WindowsLockAbstractionTests.test_wait_failure_reported_without_release) ... ok
+test_windows_file_backend_selects_mutex_abstraction (test_resource_safety.WindowsLockAbstractionTests.test_windows_file_backend_selects_mutex_abstraction) ... ok
+test_windows_named_mapping_failure_closes_mutex (test_resource_safety.WindowsLockAbstractionTests.test_windows_named_mapping_failure_closes_mutex) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 0.332s
+
+OK (skipped=2)
+Exit code: 0
+
+Python 3.10 grammar check: 10 Python source files parsed successfully. Syntax only.
+
+Original ZIP SHA256 unchanged: 15cb6709c90319b761aa125b116c9b0e53e416a681f2d25eb2d4d6fd227770fe
+
+Game adapters, tools, configuration template, source lock: byte-for-byte unchanged.

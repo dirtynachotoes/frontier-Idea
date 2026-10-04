@@ -1,0 +1,8 @@
+{
+  "HANDOFF.md": "95c3718619930bbed62691f57e9ff2dced670299670f683116682fd1bba43227",
+  "Adapters/NMS/frontier_nms_probe.py": "a6c61ef7dd579e9e69d66c3f45427617b7a833ccd9f75d62fae6836258590a61",
+  "Adapters/Sunrise/frontier_probe.lua": "f81c48869d663f2db196d46862d07e93f205d7d324c223d9b33566c3af2c16e3",
+  "Adapters/Sunrise/frontier_probe.h": "0e36a905d8f9c493ee286c12a83ac540ac756a94425ce427fae90b156c1f53d0",
+  "Core/frontier/ipc.py": "891970ed6c3d88c1f986bfa2f1d8bf7ffb8ae68a89a61ee8f7f88106371e553b",
+  "Core/frontier/probe.py": "0faa7b6ac9c96b7a362a5d9e1a0edd71121c88f6655d0b77d13e602d4f81cb62"
+}

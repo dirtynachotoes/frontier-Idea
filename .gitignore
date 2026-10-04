@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+Sunrise-Probe/
+Native-Contract-Build/
+DestinyFrontier/
+Source/
+Saves/
+Backups/
+Logs/
+Config/runtime-validation.json
+Adapters/**/runtime-validation.json
+*.trigger

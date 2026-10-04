@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/stanuwu/Sunrise.git",
+  "commit": "1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c",
+  "files": {
+    "Sunrise/src/client/runtime/client_hook_activation.cpp": "183ff1464acf14944ba2281d47a042015ed2e36f2090b07eb1c63185c170142e",
+    "Sunrise/src/client/runtime/client_runtime_lifecycle.cpp": "337bf758606d094d5ba2df809f1e6f661b9b316e1239013f9ed47a2799195aa5",
+    "Sunrise/src/client/hooks/teleport/teleport_lifecycle.cpp": "63d03e66cfc8f8d8d31ea0003ebb18f5e03342ee2a15632980455f207bf14a15",
+    "Sunrise/src/server/activity/host_runtime.cpp": "6189b562d280d71bddcabb44587654665853b857e0de4c9ea970c4cc9d1b349a",
+    "Sunrise/src/client/movement/movement_settings_store.h": "06c12370422da23658eaab5679b66881c09eb2226a9edb09b5e82dd36a6ab4db",
+    "Sunrise/src/client/movement/movement_settings_store.cpp": "d50c9e8e6353a9f29e63cbd69789060773ca8a1b12428561c8989260baadeaaa",
+    "Sunrise/src/client/hooks/fly/fly.cpp": "daf1aba0eaa7ad3f1da11c5e98752893d6dd7367f419d751666988b28fa44cbf",
+    "Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp": "8d08e50f41117e40e261a853af2b3ad784f04bce59586257efeb6ad815bb856c"
+  }
+}

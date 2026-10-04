@@ -1,0 +1,52 @@
+test_log_open_failure_closes_mapping_and_store (test_core_lifecycle.CoreLifecycleTests.test_log_open_failure_closes_mapping_and_store) ... ok
+test_mapping_constructor_failure_closes_store (test_core_lifecycle.CoreLifecycleTests.test_mapping_constructor_failure_closes_store) ... ok
+test_shutdown_reset_failure_closes_all_resources (test_core_lifecycle.CoreLifecycleTests.test_shutdown_reset_failure_closes_all_resources) ... ok
+test_stop_marker_requires_isolated_backend (test_core_lifecycle.CoreLifecycleTests.test_stop_marker_requires_isolated_backend) ... ok
+test_actual_adapter_boost_contention_expiry_and_recovery (test_liveness.LivenessTests.test_actual_adapter_boost_contention_expiry_and_recovery) ... ok
+test_actual_adapter_manual_pulse_and_speed_logs_preserved (test_liveness.LivenessTests.test_actual_adapter_manual_pulse_and_speed_logs_preserved) ... ok
+test_explicit_disconnect_clears_cache_immediately (test_liveness.LivenessTests.test_explicit_disconnect_clears_cache_immediately) ... ok
+test_no_sample_or_different_incarnation_cannot_cache (test_liveness.LivenessTests.test_no_sample_or_different_incarnation_cannot_cache) ... ok
+test_not_ready_clears_cached_effect (test_liveness.LivenessTests.test_not_ready_clears_cached_effect) ... ok
+test_old_peer_timestamp_not_receipt_time_bounds_cache (test_liveness.LivenessTests.test_old_peer_timestamp_not_receipt_time_bounds_cache) ... ok
+test_original_core_boundary_preserved (test_liveness.LivenessTests.test_original_core_boundary_preserved) ... ok
+test_peer_not_ready_invalid_epoch_version_and_future_clock (test_liveness.LivenessTests.test_peer_not_ready_invalid_epoch_version_and_future_clock) ... ok
+test_pending_event_published_on_recovery (test_liveness.LivenessTests.test_pending_event_published_on_recovery) ... ok
+test_real_file_backend_contention_preserves_live_result (test_liveness.LivenessTests.test_real_file_backend_contention_preserves_live_result) ... ok
+test_repeated_misses_never_extend_peer_deadline (test_liveness.LivenessTests.test_repeated_misses_never_extend_peer_deadline) ... ok
+test_single_miss_keeps_valid_effect (test_liveness.LivenessTests.test_single_miss_keeps_valid_effect) ... ok
+test_stale_peer_overrides_old_live_command (test_liveness.LivenessTests.test_stale_peer_overrides_old_live_command) ... ok
+test_packaged_nms_adapter_preserves_adjacent_validation_fallback (test_patch_install.PatchInstallTests.test_packaged_nms_adapter_preserves_adjacent_validation_fallback) ... ok
+test_wrong_source_refused_without_changes (test_patch_install.PatchInstallTests.test_wrong_source_refused_without_changes) ... ok
+test_corruption_refused (test_probe.PersistenceTests.test_corruption_refused) ... ok
+test_future_schema_refused (test_probe.PersistenceTests.test_future_schema_refused) ... ok
+test_restart_dedup_regression_backup (test_probe.PersistenceTests.test_restart_dedup_regression_backup) ... ok
+test_abi_and_invalid_or_stale_header (test_probe.TransportTests.test_abi_and_invalid_or_stale_header) ... ok
+test_real_core_with_explicit_fake_adapter_packets_and_restart (test_probe.TransportTests.test_real_core_with_explicit_fake_adapter_packets_and_restart) ... ok
+test_close_during_lock_refused_then_context_cleans_up (test_resource_safety.MappingResourceTests.test_close_during_lock_refused_then_context_cleans_up) ... ok
+test_constructor_mmap_failure_closes_file (test_resource_safety.MappingResourceTests.test_constructor_mmap_failure_closes_file) ... ok
+test_contending_thread_skips_then_acquires (test_resource_safety.MappingResourceTests.test_contending_thread_skips_then_acquires) ... ok
+test_invalid_file_size_refused_without_handle (test_resource_safety.MappingResourceTests.test_invalid_file_size_refused_without_handle) ... ok
+test_repeated_lock_release_and_exception (test_resource_safety.MappingResourceTests.test_repeated_lock_release_and_exception) ... ok
+test_two_views_never_retruncate_existing_mapping (test_resource_safety.MappingResourceTests.test_two_views_never_retruncate_existing_mapping) ... ok
+test_named_mapping_views_and_close (test_resource_safety.NativeWindowsTests.test_named_mapping_views_and_close) ... skipped 'Requires native Windows kernel; mocked Win32 unit tests run on all platforms'
+test_real_abandoned_mutex_released_and_refused (test_resource_safety.NativeWindowsTests.test_real_abandoned_mutex_released_and_refused) ... skipped 'Requires native Windows kernel; mocked Win32 unit tests run on all platforms'
+test_active_transaction_backup_refused_without_hanging (test_resource_safety.StoreResourceTests.test_active_transaction_backup_refused_without_hanging) ... ok
+test_backup_destination_closed_before_promotion (test_resource_safety.StoreResourceTests.test_backup_destination_closed_before_promotion) ... ok
+test_constructor_initial_backup_failure_closes_source (test_resource_safety.StoreResourceTests.test_constructor_initial_backup_failure_closes_source) ... ok
+test_failed_close_backup_still_closes_source (test_resource_safety.StoreResourceTests.test_failed_close_backup_still_closes_source) ... ok
+test_future_constructor_closes_retained_connection (test_resource_safety.StoreResourceTests.test_future_constructor_closes_retained_connection) ... ok
+test_idempotent_close_preserves_committed_state (test_resource_safety.StoreResourceTests.test_idempotent_close_preserves_committed_state) ... ok
+test_promotion_failure_cleans_partial_and_preserves_source (test_resource_safety.StoreResourceTests.test_promotion_failure_cleans_partial_and_preserves_source) ... ok
+test_store_context_exception_releases_source (test_resource_safety.StoreResourceTests.test_store_context_exception_releases_source) ... ok
+test_abandoned_mutex_released_before_refusal (test_resource_safety.WindowsLockAbstractionTests.test_abandoned_mutex_released_before_refusal) ... ok
+test_acquire_timeout_release_idempotent_close (test_resource_safety.WindowsLockAbstractionTests.test_acquire_timeout_release_idempotent_close) ... ok
+test_create_failure_reported (test_resource_safety.WindowsLockAbstractionTests.test_create_failure_reported) ... ok
+test_release_and_close_errors_propagate (test_resource_safety.WindowsLockAbstractionTests.test_release_and_close_errors_propagate) ... ok
+test_wait_failure_reported_without_release (test_resource_safety.WindowsLockAbstractionTests.test_wait_failure_reported_without_release) ... ok
+test_windows_file_backend_selects_mutex_abstraction (test_resource_safety.WindowsLockAbstractionTests.test_windows_file_backend_selects_mutex_abstraction) ... ok
+test_windows_named_mapping_failure_closes_mutex (test_resource_safety.WindowsLockAbstractionTests.test_windows_named_mapping_failure_closes_mutex) ... ok
+
+----------------------------------------------------------------------
+Ran 47 tests in 2.849s
+
+OK (skipped=2)

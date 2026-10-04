@@ -1,0 +1,15 @@
+# Milestone journal — 2026-10-04
+
+Reviewed original handoff/repair, supplied actual NMS adapter, confirmed heartbeat-fixed base, spatial V1/V2/CI archives, position/camera source exports, current GitHub tree at 5db7d2f7f21ca37df3d9c7f8bb168d4d09a7b413 and its successful spatial run 37177567768. Input hashes and retained historical records are under Documentation. The supplied mashup video was visually sampled; its role is the requested host/guest framing, not evidence of a Tiger engine seam.
+
+Closed facts: both games run concurrently; both event directions actuate gameplay; heartbeat repair confirmed; native position/camera access and 128-byte spatial compile confirmed. They were not re-run in games.
+
+Rejected approaches: ongoing communication through EDZ Lua/timers; guessing engine layouts/axis conversions; persisting a transient flight toggle through movement.json; multiple NMS movement writers; broadening liveness to hide stalls; local gaming-PC compilation; installing each plumbing revision. The old natural-alignment V1 layout and misleading V2-with-v1-name are replaced consistently. Earlier CI failed its vswhere path, then succeeded; the successful runner is retained without that unnecessary path lookup.
+
+Inspected actual pinned Sunrise lifecycle, camera/teleport update, local-player ownership/fault-safe reads, bootflow freshness, host reducer region events, fly physics and settings-store publication. Selected native camera tick after player/bootflow polls, and atomic region ingress before mission dispatch. The overlay is separated through runtime_get because upstream UI/hotkey code reads get() then persists its returned settings; changing get() itself would accidentally persist the override. Physics-side expiry additionally handles a stopped camera update.
+
+Implemented one reversible guest command with Core/peer/host-pose lease, process/context guards, monotonically acknowledged request IDs and no auto replay after loss. NMS remains visible authority; native guest reports its consumed host sample, real local pose and command result. Initial translation deliberately uses the existing verified NMS walking-assist setter instead of inventing a host pose writer.
+
+Validation: Python/static/fake tests, untouched-base hashes, naturally aligned C++/Python layout and exact wire bytes, portable native policy execution, guarded patch applied to a fresh reviewed source tree, diff whitespace check. Full Sunrise compilation belongs only in remote CI; games stay closed throughout implementation. Remote/run evidence is recorded separately from local source-package evidence.
+
+Resume from canonical repo; never layer an old ZIP on top. Next acceptance resolves NEW native scheduling across activity selection and background focus, host pose consumption, native lease actuation and return. If it passes, implement host-driven bounded Guardian movement and safe host-relative motion before collision/combat. Inspect the actual NMS actuation and Tiger local collision/input seams when needed; do not grow a standalone telemetry project.

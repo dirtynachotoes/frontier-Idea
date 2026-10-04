@@ -1,0 +1,378 @@
+{
+  "retrieved_utc": "2026-10-03",
+  "meaning": "Research source pins, not runtime compatibility certifications",
+  "repositories": [
+    {
+      "name": "skycraft",
+      "repository": "https://github.com/chasmlol/SkyCraft.git",
+      "commit": "bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32",
+      "commit_date": "2026-10-01T02:36:44+01:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "7bc6899eaa5220278005ba77da6d9a335115fbe2b915489d9828793e487a82ea",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/README.md"
+        },
+        {
+          "path": "docs/DESIGN.md",
+          "sha256": "ce94f3ed20a3936a604a8233eab325d79a45dd68de387a3f74a2cf438411369d",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/docs/DESIGN.md"
+        },
+        {
+          "path": "protocol/skycraft_protocol.h",
+          "sha256": "d7dd4da8201fabd34f97225b73cb2b2d9b1f70e7290978de33fa3cbad195a11e",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/protocol/skycraft_protocol.h"
+        },
+        {
+          "path": "skse/src/Link.cpp",
+          "sha256": "842071e879bac096b92f2f8cba5464b7caa4aac641fe2c43cc7ccbaf8226f6a2",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/skse/src/Link.cpp"
+        },
+        {
+          "path": "skse/src/Collision.cpp",
+          "sha256": "956d9357b597f36f16fb659d684fdc51ae0b7b6f5fc2f1c068c8ac3ddc891494",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/skse/src/Collision.cpp"
+        },
+        {
+          "path": "skse/src/WorldRender.cpp",
+          "sha256": "5c7e55f9c395a5e06a1da77b1197aad40ef43252541ed4ff93e7a3e37fa63d1c",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/skse/src/WorldRender.cpp"
+        },
+        {
+          "path": "skse/src/Input.cpp",
+          "sha256": "44f2882328b524005bbcf8142998608da1739bbe127d3eff6cc180bcc1849363",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/skse/src/Input.cpp"
+        },
+        {
+          "path": "fabric/src/main/java/dev/skycraft/link/Proto.java",
+          "sha256": "48c9401af7dd410bebb599bfe3d0a30a8155047161dd766767ea80931da93bc2",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/fabric/src/main/java/dev/skycraft/link/Proto.java"
+        },
+        {
+          "path": "fabric/src/main/java/dev/skycraft/link/SkyLink.java",
+          "sha256": "8f2fe3c05ad0c390f55099b92067f706b85aa6dae867eac9c1c66ba699e6e3f7",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/fabric/src/main/java/dev/skycraft/link/SkyLink.java"
+        },
+        {
+          "path": "fabric/src/main/java/dev/skycraft/combat/SkyrimActorEntity.java",
+          "sha256": "66c9ca10d96144220c522d75ce197194c353031ca5a59b135b578502888e3e04",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/fabric/src/main/java/dev/skycraft/combat/SkyrimActorEntity.java"
+        },
+        {
+          "path": "fabric/src/client/java/dev/skycraft/client/FrameExporter.java",
+          "sha256": "b96cc04edd806a505926a81aff972dbe8b4ae917cdae2d3bc2e05199cbd0f154",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/fabric/src/client/java/dev/skycraft/client/FrameExporter.java"
+        },
+        {
+          "path": "fabric/src/client/java/dev/skycraft/client/render/WorldExporter.java",
+          "sha256": "aa69bfee4b622aba439b0676a30619dfd4d35311d3a01f498c23bc2551338ae4",
+          "url": "https://github.com/chasmlol/SkyCraft/blob/bfcaf178524b92c2cdeb88e4ce0f13ef9ded6f32/fabric/src/client/java/dev/skycraft/client/render/WorldExporter.java"
+        }
+      ]
+    },
+    {
+      "name": "sunrise",
+      "repository": "https://github.com/stanuwu/Sunrise.git",
+      "commit": "1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c",
+      "commit_date": "2026-09-28T01:09:14+02:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "13b511aa42a945870b567fd6518a3f695731924af33959286677b678d77c0c16",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/README.md"
+        },
+        {
+          "path": "CMakeLists.txt",
+          "sha256": "627cb665fd87f04b6ded2eff32da03c4c856aa47fca4c7c8261b268697e808dd",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/CMakeLists.txt"
+        },
+        {
+          "path": "Sunrise/src/dllmain.cpp",
+          "sha256": "8631187af996f7fc29f66f99871bf8c8a7a35c652c639f3291df2e28eac684d7",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/dllmain.cpp"
+        },
+        {
+          "path": "Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp",
+          "sha256": "8d08e50f41117e40e261a853af2b3ad784f04bce59586257efeb6ad815bb856c",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp"
+        },
+        {
+          "path": "Sunrise/src/server/activity/mission/mission_script_lua_context_api.cpp",
+          "sha256": "566544785092551dd3f37ba3e3d50ed49d53421b719eeddbe08e00f2bf22a8fd",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/server/activity/mission/mission_script_lua_context_api.cpp"
+        },
+        {
+          "path": "Sunrise/src/server/activity/mission/mission_script_lua_state_api.cpp",
+          "sha256": "4de490604482004011c46acdfc1309352313f128939f595e2bcc9b7e89a41800",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/server/activity/mission/mission_script_lua_state_api.cpp"
+        },
+        {
+          "path": "Sunrise/src/server/activity/mission/mission_script_vm.cpp",
+          "sha256": "2641c11a7e33ff00c74896202e084fae05e38967ccd0ba774bbe88cc97958677",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/server/activity/mission/mission_script_vm.cpp"
+        },
+        {
+          "path": "Sunrise/src/server/activity/mission/mission_script_runtime_attach.cpp",
+          "sha256": "527f383e124c889777afda3bea94bea2b82701e0f8b7c3bb1b93b7eff1b08cba",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/server/activity/mission/mission_script_runtime_attach.cpp"
+        },
+        {
+          "path": "Sunrise/src/core/ui/hud/overlays/ui_hud_mission_script_overlay.cpp",
+          "sha256": "8814ac4c856e20e616bffcf7fce2a73719daae144ca48e5394dc130fa70f5328",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/core/ui/hud/overlays/ui_hud_mission_script_overlay.cpp"
+        },
+        {
+          "path": "Sunrise/src/state/investment/investment_database.cpp",
+          "sha256": "c5d167abe9f9fa700a8905f8758b5c67fa204e7fecc3ef3f437b00772df04fed",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/state/investment/investment_database.cpp"
+        },
+        {
+          "path": "Sunrise/src/state/investment/investment_account_store.cpp",
+          "sha256": "60c4f0fe3b7f97142cf8e91b591293c77d5f3aa073de5aecd3ccab0fbf05add2",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/state/investment/investment_account_store.cpp"
+        },
+        {
+          "path": "Sunrise/src/state/investment/investment_store_boot.cpp",
+          "sha256": "f061b2d157b2a35b7b5f3350a0b5cea52d707d4dcfa7a75e428a206414cd3160",
+          "url": "https://github.com/stanuwu/Sunrise/blob/1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c/Sunrise/src/state/investment/investment_store_boot.cpp"
+        }
+      ]
+    },
+    {
+      "name": "missions",
+      "repository": "https://github.com/stanuwu/SunriseMissions.git",
+      "commit": "f317a32805ea72dac57152a65244e6ae36218e0d",
+      "commit_date": "2026-09-18T13:39:55+02:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "ac21c58520942dbcfa8ccd460fb9b333bf0b8da12d01cb2b63b1a24dbbeff4e0",
+          "url": "https://github.com/stanuwu/SunriseMissions/blob/f317a32805ea72dac57152a65244e6ae36218e0d/README.md"
+        },
+        {
+          "path": "edz_freeroam/edz_freeroam.lua",
+          "sha256": "98497bfe2e5dc2e6a6f9712e6e5e1ce348825ec7faa1886feafc9ffbb9cd7488",
+          "url": "https://github.com/stanuwu/SunriseMissions/blob/f317a32805ea72dac57152a65244e6ae36218e0d/edz_freeroam/edz_freeroam.lua"
+        },
+        {
+          "path": "lib/freeroam.lua",
+          "sha256": "c598437f9a52f7af2e344e89cfedf7b45737c7139458aa6f679c69ed51265a29",
+          "url": "https://github.com/stanuwu/SunriseMissions/blob/f317a32805ea72dac57152a65244e6ae36218e0d/lib/freeroam.lua"
+        },
+        {
+          "path": "mission_launchpad/mission_launchpad.lua",
+          "sha256": "e05be1482cce702a50c9752be138112bf56970af714af28a8a22cefccabc76e8",
+          "url": "https://github.com/stanuwu/SunriseMissions/blob/f317a32805ea72dac57152a65244e6ae36218e0d/mission_launchpad/mission_launchpad.lua"
+        }
+      ]
+    },
+    {
+      "name": "nms-py",
+      "repository": "https://github.com/monkeyman192/NMS.py.git",
+      "commit": "52e2e55493ddade1d89d3e638491afff995f5631",
+      "commit_date": "2026-10-01T22:17:42+10:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "ce51b16cb3df85f292c81fe8d662363d5b76bc6e497d0ff7dc244cec9a9d4f47",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/README.md"
+        },
+        {
+          "path": "pyproject.toml",
+          "sha256": "d3718106541dbbe3479f9a9e3635f9c59f21aab2c1c2fc208260103909260831",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/pyproject.toml"
+        },
+        {
+          "path": "nmspy/data/types.py",
+          "sha256": "345a432d95083e0cbc669854d24c9cec764c5c1e2bfde021ad1707c7772e6b43",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/nmspy/data/types.py"
+        },
+        {
+          "path": "nmspy/data/exported_types.py",
+          "sha256": "d21476343ead1f2fea0c481d7d4e65de0db8d79de2df133e1a5c11b5f448f11a",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/nmspy/data/exported_types.py"
+        },
+        {
+          "path": "nmspy/common.py",
+          "sha256": "90c28c0a3e93896603a2d081e138e91a6ea44aed2289f69264de1fe8427481a6",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/nmspy/common.py"
+        },
+        {
+          "path": "nmspy/globals.py",
+          "sha256": "b9de02cb8afd6f66041d70d8eca5124ddd33529f90067f20eeff569d1d4e4c3e",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/nmspy/globals.py"
+        },
+        {
+          "path": "nmspy/_internal_mods/singletons.py",
+          "sha256": "b3feec28cec7575067cd380817632640010ed00425e21497ddd9108fd2e70dd4",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/nmspy/_internal_mods/singletons.py"
+        },
+        {
+          "path": "example_mods/playerLocation.py",
+          "sha256": "9bc3ad618e9553d37cec9e6a6ec71242a2aae20e6d627e8b0d3c97c104df186d",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/example_mods/playerLocation.py"
+        },
+        {
+          "path": "example_mods/gravityManipulator.py",
+          "sha256": "8472558894e45169030134bd84de99f80ea467fc1b38dcaf2b09dadb77c73e06",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/example_mods/gravityManipulator.py"
+        },
+        {
+          "path": "example_mods/instantScanning.py",
+          "sha256": "64aa0d02bc769838384da0a4f2daefbf55d81e33691ddb90fa497c7202a859b3",
+          "url": "https://github.com/monkeyman192/NMS.py/blob/52e2e55493ddade1d89d3e638491afff995f5631/example_mods/instantScanning.py"
+        }
+      ]
+    },
+    {
+      "name": "sundial",
+      "repository": "https://github.com/KyleThmpsn/sundial.git",
+      "commit": "0bda0c53259df6c528086cb555949c5ef1d3ed6e",
+      "commit_date": "2026-09-27T21:11:38-05:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "eabe2ba2fb4634659ad4e0711912b982ac31f6842bc0db7b183263e984c07a1b",
+          "url": "https://github.com/KyleThmpsn/sundial/blob/0bda0c53259df6c528086cb555949c5ef1d3ed6e/README.md"
+        },
+        {
+          "path": "crates/parhelion/README.md",
+          "sha256": "f427f09e7c07e06fd2a8e7ea518a2691ce13a41985dc38ef4f2188302282166d",
+          "url": "https://github.com/KyleThmpsn/sundial/blob/0bda0c53259df6c528086cb555949c5ef1d3ed6e/crates/parhelion/README.md"
+        }
+      ]
+    },
+    {
+      "name": "launcher",
+      "repository": "https://github.com/JohnMarkR/SunriseLauncher.git",
+      "commit": "8b9f73287a369abefc66d945b2b452d51ea80c1d",
+      "commit_date": "2026-09-17T18:12:12+02:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "3ccdc0295fe95790cfb5d99e5e6d477c5d789d73c227a79cd35236af5ad2b0d0",
+          "url": "https://github.com/JohnMarkR/SunriseLauncher/blob/8b9f73287a369abefc66d945b2b452d51ea80c1d/README.md"
+        }
+      ]
+    },
+    {
+      "name": "nms-api",
+      "repository": "https://github.com/gurrenm3/NoMansSky.Api.git",
+      "commit": "1974810b828802377129a03bb96fa2d6f10ded8a",
+      "commit_date": "2023-06-03T23:12:12-07:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "96784fd79cb6a9be0a491b0f23dad0bdc2fc6e68169ea0b97298e2c157f2adb6",
+          "url": "https://github.com/gurrenm3/NoMansSky.Api/blob/1974810b828802377129a03bb96fa2d6f10ded8a/README.md"
+        },
+        {
+          "path": "NoMansSky.Api/Api/Definitions/Player/Player.cs",
+          "sha256": "bfd2219cd50b27d24505341ef9b8803ac51e85d6e74d7319e6e22ec895f5fde1",
+          "url": "https://github.com/gurrenm3/NoMansSky.Api/blob/1974810b828802377129a03bb96fa2d6f10ded8a/NoMansSky.Api/Api/Definitions/Player/Player.cs"
+        }
+      ]
+    },
+    {
+      "name": "renms",
+      "repository": "https://github.com/sonny-tel/renms.git",
+      "commit": "9696413ec82bd0bd6cea81565ef20122a1c168bb",
+      "commit_date": "2024-01-20T17:41:55+11:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "c79bf27c26dbc2b5d563385cac4b5022253202f87f929f1e71fffc4ec445c815",
+          "url": "https://github.com/sonny-tel/renms/blob/9696413ec82bd0bd6cea81565ef20122a1c168bb/README.md"
+        }
+      ]
+    },
+    {
+      "name": "mbin",
+      "repository": "https://github.com/monkeyman192/MBINCompiler.git",
+      "commit": "0e81c91aa51c78d7aa3e298e9ba7532bd0c7c49c",
+      "commit_date": "2026-09-24T16:27:29-04:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "2811e32ba64105088d2fdcfc1633ad527d34cd1bce311f717edc3ed651ac31fe",
+          "url": "https://github.com/monkeyman192/MBINCompiler/blob/0e81c91aa51c78d7aa3e298e9ba7532bd0c7c49c/README.md"
+        },
+        {
+          "path": "libMBIN/Source/Version.cs",
+          "sha256": "8d0a0da7ddaabff4fe4362dd6dbc580c4572c2da32c75532954b6a8c18a0c84b",
+          "url": "https://github.com/monkeyman192/MBINCompiler/blob/0e81c91aa51c78d7aa3e298e9ba7532bd0c7c49c/libMBIN/Source/Version.cs"
+        }
+      ]
+    },
+    {
+      "name": "amumss-current",
+      "repository": "https://github.com/HolterPhylo/AMUMSS.git",
+      "commit": "d19a6e7b115511600d8431aa195f158afb15a40f",
+      "commit_date": "2025-12-13T11:14:59-05:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "06ee2317b20c6aa72dd55821cb3dbb9db1838cafba8c5b85661df4dbc1e53afe",
+          "url": "https://github.com/HolterPhylo/AMUMSS/blob/d19a6e7b115511600d8431aa195f158afb15a40f/README.md"
+        }
+      ]
+    },
+    {
+      "name": "save-tool",
+      "repository": "https://github.com/zencq/libNOM.io.git",
+      "commit": "652aabb0147888776a088909cdb13bccbd3d9588",
+      "commit_date": "2025-10-28T22:37:42+01:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "52fc47a3f2e3c51ef2b9abaf5eda7b1a5522b4992fa14ff2c80ce4a10bb143f2",
+          "url": "https://github.com/zencq/libNOM.io/blob/652aabb0147888776a088909cdb13bccbd3d9588/README.md"
+        }
+      ]
+    },
+    {
+      "name": "gear-editor",
+      "repository": "https://github.com/WalterGerig/SunriseGearEditor.git",
+      "commit": "eda715e18f39f39120f71b1212d679da2ed6194f",
+      "commit_date": "2026-09-08T22:28:28+02:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "6b1c1daf8a4a071a71bc27c8b896e637e6e075f5e587c3f365600384b16ac576",
+          "url": "https://github.com/WalterGerig/SunriseGearEditor/blob/eda715e18f39f39120f71b1212d679da2ed6194f/README.md"
+        }
+      ]
+    },
+    {
+      "name": "tiger-pkg",
+      "repository": "https://github.com/v4nguard/tiger-pkg.git",
+      "commit": "657f41c0851001b2d371592b2f7a5cb9c686ddb4",
+      "commit_date": "2026-07-11T18:32:06+02:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "d1e67db38e86317a01415f53e40e8debb4feb7756e3b0940d876019fed8499d4",
+          "url": "https://github.com/v4nguard/tiger-pkg/blob/657f41c0851001b2d371592b2f7a5cb9c686ddb4/README.md"
+        }
+      ]
+    },
+    {
+      "name": "reloaded",
+      "repository": "https://github.com/Reloaded-Project/Reloaded-II.git",
+      "commit": "458987f26bc8d78fdc0f86b73fc0d6fd4b673d01",
+      "commit_date": "2026-09-23T01:41:24+01:00",
+      "reviewed_files": [
+        {
+          "path": "README.md",
+          "sha256": "4045781a3e99f90516c2e8404138ca67adec8a98959f3179005cd9a3268f48ad",
+          "url": "https://github.com/Reloaded-Project/Reloaded-II/blob/458987f26bc8d78fdc0f86b73fc0d6fd4b673d01/README.md"
+        }
+      ]
+    }
+  ],
+  "official_release_pages": [
+    "https://projectsunrise.dev/docs/destiny-2/the-build/",
+    "https://www.nomanssky.com/release-log/",
+    "https://www.nomanssky.com/2026/09/cosmos-7-05/"
+  ]
+}

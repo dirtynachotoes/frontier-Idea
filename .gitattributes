@@ -1,0 +1,4 @@
+* text eol=lf
+*.dll binary
+*.pdb binary
+*.bin binary

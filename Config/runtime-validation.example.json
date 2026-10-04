@@ -1,0 +1,10 @@
+{
+  "nms_exe_sha256": "REPLACE_WITH_HASH_OF_LOCALLY_TESTED_NMS_EXE",
+  "nmspy_version": "180383.0",
+  "runtime_hooks_validated": false,
+  "test_profile": true,
+  "storefront": "UNTESTED",
+  "nms_release": "UNTESTED",
+  "sunrise_commit": "1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c",
+  "notes": "Complete real runtime validation before marking hooks validated. This file does not establish compatibility."
+}
