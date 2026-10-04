@@ -1,15 +1,11 @@
-# Destiny Frontier — native Guardian guest milestone
+# Destiny Frontier — Guardian locomotion candidate
 
-NMS is the visible world host. Offline Sunrise/Destiny is the Guardian gameplay guest. Frontier coordinates small, versioned state transfers; it is not a third engine.
+NMS is the visible world host. Offline Sunrise/Destiny is the authentic Guardian gameplay guest. Frontier translates small state transfers.
 
-This canonical tree consolidates the repaired, runtime-proven event bridge, spatial V2, native guest source, remote build tooling, game-free tests and installation. The earlier spatial Actions build is a **closed compile gate**: do not install its intermediate DLL. Build this entire milestone once through the existing repository workflow.
+The current opt-in slice routes foreground WASD/Shift/Space into Sunrise's authored keyboard actions and returns measured Guardian displacement to NMS. F9 arms/disarms it. **Locomotion runtime acceptance is pending**; this is one consolidated development candidate, not a finished release game.
 
-The new slice is **Guardian Scout Link**: while NMS has focus, F8 produces an existing Frontier pulse. Core requests a temporary native Guardian flight/hover lease. Sunrise applies its existing native flight simulation and returns acknowledgement, context and pose. Core translates the acknowledged guest lease into the already proven NMS walking assist (1.25 × the captured baseline). F8 again clears the lease/assist. No window switching is required to operate the feature. No preference or native save is changed by the command.
+StartGuardianLocomotion.cmd enables this candidate using the existing Python environment. StartFrontier.cmd preserves the previously tested Scout Link behavior. Keep Scout Link hover and Sunrise fly off for locomotion. The known one-time manual Guardian movement bootstrap remains permitted; the startup-discovery blocker is unchanged.
 
-This is an initial guest capability/result exchange, **not shared Guardian/NMS physics**. The NMS assist is a translation of the guest flight lease, not the Guardian's measured walking velocity. NMS still owns visible movement and collision. The existing NMS event callback also observes positive nanite awards; it is preserved, not expanded. In Scout Link those legacy pulses can also toggle the lease; no currency is awarded or modified by Frontier.
+Read Documentation/GUARDIAN_LOCOMOTION.md for the exact seams, limits and new uncertainties. Documentation/RUNTIME_ACCEPTANCE.md describes the single session after the remotely compiled candidate is installed. INSTALL.md and Tools/install_candidate.py preserve backup and offline-executable fingerprint checks. No commercial game files are distributed.
 
-Always-on means native communication during Sunrise's existing client frame lifecycle regardless of loaded mission Lua. An unloaded or suspended guest cannot simulate independently of its game lifecycle. The optional old Lua phase display can still read cached status, but has no transport ownership.
-
-Read BUILD.md for the **one remote build**, INSTALL.md for the **one consolidated install**, and Documentation/RUNTIME_ACCEPTANCE.md for the **one eventual session**. StartFrontier.cmd starts Core in Scout Link mode using the existing Python environment. Use the already working game/loader launch arrangements, with Sunrise backgrounded only as far as its lifecycle continues to tick. This milestone does not claim the final polished DestinyFrontier.exe is finished.
-
-RunLightweightTests.cmd performs Python/static/fake-endpoint checks without launching games or compiling Sunrise. Remote CI additionally compiles the small real native policy/ABI harness and the complete native guest.
+The proven bidirectional bridge, heartbeat repair, published-snapshot readiness, always-on native lifecycle, ControlBlock 128-byte layout and Spatial V2 remain in place. RunLightweightTests.cmd checks protocol work without games; the bounded GitHub workflow alone compiles Sunrise.

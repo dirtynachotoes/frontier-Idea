@@ -1,38 +1,80 @@
---- a/Sunrise/src/client/runtime/client_hook_activation.cpp
-+++ b/Sunrise/src/client/runtime/client_hook_activation.cpp
-@@ -1,3 +1,4 @@
-+#include "../frontier/frontier_native.h"
- #include <Windows.h>
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c417a9c..e9dac3b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -137,3 +137,9 @@ set_target_properties(steam_api64 PROPERTIES
+ set_source_files_properties(Sunrise/vendor/sqlite/sqlite3.c PROPERTIES
+     COMPILE_DEFINITIONS "SQLITE_OMIT_LOAD_EXTENSION;SQLITE_THREADSAFE=1"
+ )
++
++# Frontier native code: compiler warnings must never become a publishable candidate.
++if(MSVC)
++    set_source_files_properties("Sunrise/src/client/frontier/frontier_native.cpp"
++        PROPERTIES COMPILE_OPTIONS "/WX")
++endif()
+diff --git a/Sunrise/src/client/hooks/fly/fly.cpp b/Sunrise/src/client/hooks/fly/fly.cpp
+index 6da2da4..cf583aa 100644
+--- a/Sunrise/src/client/hooks/fly/fly.cpp
++++ b/Sunrise/src/client/hooks/fly/fly.cpp
+@@ -269,7 +269,7 @@ void poll_toggle() noexcept {
  
- #include <array>
-@@ -186,9 +187,9 @@
-     (void)activity::mission_launch::install();
-     // The teleport hooks attach whether or not the feature is on, so the interface can enable it
-     // without a restart. Both replacements return immediately while nothing is requested.
--    (void)hooks::teleport::install();
--    // Noclip owns its Havok-step target, so a patch-specific miss cannot disable teleport.
--    (void)hooks::noclip::install();
-+    const bool frontierTeleport = hooks::teleport::install();
-+    const bool frontierPhysics = hooks::noclip::install();
-+    frontier::start(frontierTeleport && frontierPhysics);
-     // Attaches whether or not the feature is on, so the interface can enable it without a restart.
-     (void)hooks::infinite_ammo::install();
-     // Resolves the activity config getter here; the hold itself runs on the frame tick.
---- a/Sunrise/src/client/runtime/client_runtime_lifecycle.cpp
-+++ b/Sunrise/src/client/runtime/client_runtime_lifecycle.cpp
-@@ -1,3 +1,4 @@
-+#include "../frontier/frontier_native.h"
- #include "../../core/logging/log.h"
- #include "../../core/settings/settings.h"
- #include "../../server/bap/runtime.h"
-@@ -110,6 +111,7 @@
-         return false;
+ /** Writes the player's velocity on the physics sync, which publishes it. */
+ void apply(void* component) noexcept {
+-    const client::movement::Settings settings = client::movement::get();
++    const client::movement::Settings settings = client::movement::runtime_get();
+     if (!settings.flyEnabled) {
+         return;
      }
-     activity::mission_launch::uninstall();
-+    frontier::shutdown();
-     hooks::bootflow::uninstall();
-     hooks::infinite_ammo::uninstall();
-     hooks::inactivity::uninstall();
+@@ -288,7 +288,7 @@ void apply(void* component) noexcept {
+ 
+ /** Reports whether fly is on. */
+ bool enabled() noexcept {
+-    return client::movement::get().flyEnabled;
++    return client::movement::runtime_get().flyEnabled;
+ }
+ 
+ /** Sets the velocity the coming simulation step integrates. */
+@@ -297,7 +297,7 @@ void before_step(void* body) noexcept {
+     if (body == nullptr || !read_bindings()) {
+         return;
+     }
+-    noclip::write_body_velocity(body, desired_velocity(client::movement::get().flySpeed));
++    noclip::write_body_velocity(body, desired_velocity(client::movement::runtime_get().flySpeed));
+     noclip::Vector position{};
+     noclip::read_body_position(body, position);
+     g_heightBeforeStep = position[teleport::kVerticalLane];
+diff --git a/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp b/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp
+index 497373d..eb86630 100644
+--- a/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp
++++ b/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp
+@@ -14,6 +14,7 @@
+ 
+ #include "../../diagnostics/module_range.h"
+ #include "runtime.h"
++#include "../../frontier/frontier_native.h"
+ 
+ namespace sunrise::client::hooks::polled_input {
+ namespace {
+@@ -56,6 +57,8 @@ __declspec(noinline) SHORT WINAPI get_key_state(int virtualKey) noexcept {
+         if (g_interfaceOpen.load(std::memory_order_relaxed)) {
+             return kKeyReleased;
+         }
++        bool frontierHeld=false;
++        if(client::frontier::motion_key(static_cast<unsigned>(virtualKey),frontierHeld))return frontierHeld?kKeyHeld:kKeyReleased;
+         if (is_forced(virtualKey)) {
+             return kKeyHeld;
+         }
+@@ -76,6 +79,8 @@ __declspec(noinline) SHORT WINAPI get_async_key_state(int virtualKey) noexcept {
+     if (g_interfaceOpen.load(std::memory_order_relaxed) && caller_is_game(_ReturnAddress())) {
+         return kKeyReleased;
+     }
++    bool frontierHeld=false;
++    if(caller_is_game(_ReturnAddress())&&client::frontier::motion_key(static_cast<unsigned>(virtualKey),frontierHeld))return frontierHeld?kKeyHeld:kKeyReleased;
+     const GetAsyncKeyState next = original<GetAsyncKeyState>(HookSlot::getAsyncKeyState);
+     if (next == nullptr) {
+         return kKeyReleased;
+diff --git a/Sunrise/src/client/hooks/teleport/teleport_lifecycle.cpp b/Sunrise/src/client/hooks/teleport/teleport_lifecycle.cpp
+index b68d2c6..f3191a6 100644
 --- a/Sunrise/src/client/hooks/teleport/teleport_lifecycle.cpp
 +++ b/Sunrise/src/client/hooks/teleport/teleport_lifecycle.cpp
 @@ -1,3 +1,4 @@
@@ -40,7 +82,7 @@
  /**
   * Finds the three teleport targets and attaches the two detours. All or nothing: finding only some
   * would arm a key that silently does nothing.
-@@ -86,6 +87,7 @@
+@@ -86,6 +87,7 @@ std::int64_t __fastcall camera_transform(std::uint32_t playerIndex) noexcept {
      client::player::position::poll();
      hooks::bootflow::poll_world_step();
      hooks::bootflow::poll_current_slice_set();
@@ -48,37 +90,11 @@
      return result;
  }
  
---- a/Sunrise/src/server/activity/host_runtime.cpp
-+++ b/Sunrise/src/server/activity/host_runtime.cpp
-@@ -1,3 +1,4 @@
-+#include "../../client/frontier/frontier_native.h"
- /**
-  * The Activity Host instance table, event ring, reducer queue and Auth-state lane.
-  * Helpers here need the Host runtime lock; the entry points take it themselves.
-@@ -251,6 +252,8 @@
-     event.clientStateHasSpawn = input.state.hasSpawn;
-     event.clientStateHasTeleport = input.state.hasTeleport;
-     event.clientEntered = input.state.entered;
-+    client::frontier::observe_region(event.clientStateHasCurrentRegion, event.currentRegionIndex,
-+                                     event.heldRegionIndex, event.previousRegionIndex);
-     append_event(event);
-     append_mission_input(event, nullptr);
-     instance->view.lastEventSequence = g_sequence;
---- a/Sunrise/src/client/movement/movement_settings_store.h
-+++ b/Sunrise/src/client/movement/movement_settings_store.h
-@@ -46,6 +46,9 @@
- 
- /** @return One lock-consistent copy of the current configuration. */
- [[nodiscard]] Settings get() noexcept;
-+/** Transient Frontier overlay. Never published to movement.json or the UI base settings. */
-+void set_frontier_hover(bool enabled, std::uint64_t expires) noexcept;
-+[[nodiscard]] Settings runtime_get() noexcept;
- 
- /**
-  * Publishes one configuration and writes it straight to disk.
+diff --git a/Sunrise/src/client/movement/movement_settings_store.cpp b/Sunrise/src/client/movement/movement_settings_store.cpp
+index 058dc40..db6c33f 100644
 --- a/Sunrise/src/client/movement/movement_settings_store.cpp
 +++ b/Sunrise/src/client/movement/movement_settings_store.cpp
-@@ -32,6 +32,7 @@
+@@ -32,6 +32,7 @@ constexpr std::uint32_t kMaximumVirtualKey = 254;
  
  SRWLOCK g_lock{SRWLOCK_INIT};
  Settings g_settings{};
@@ -86,7 +102,7 @@
  core::path::Buffer g_path{};
  bool g_pathResolved{};
  
-@@ -233,6 +234,7 @@
+@@ -233,6 +234,7 @@ void load() noexcept {
  void initialize(void* module) noexcept {
      AcquireSRWLockExclusive(&g_lock);
      g_settings = Settings{};
@@ -94,7 +110,7 @@
      g_pathResolved =
          core::path::artifact_directory(module, g_path) && core::path::append(g_path, kFileSuffix);
      if (g_pathResolved) {
-@@ -247,6 +249,7 @@
+@@ -247,6 +249,7 @@ void initialize(void* module) noexcept {
  void shutdown() noexcept {
      AcquireSRWLockExclusive(&g_lock);
      g_settings = Settings{};
@@ -102,7 +118,7 @@
      g_path = core::path::Buffer{};
      g_pathResolved = false;
      ReleaseSRWLockExclusive(&g_lock);
-@@ -260,6 +263,19 @@
+@@ -260,6 +263,19 @@ Settings get() noexcept {
      return snapshot;
  }
  
@@ -122,35 +138,79 @@
  /** Publishes one configuration and writes it straight to disk. */
  bool publish(const Settings& settings) noexcept {
      if (!valid(settings)) {
---- a/Sunrise/src/client/hooks/fly/fly.cpp
-+++ b/Sunrise/src/client/hooks/fly/fly.cpp
-@@ -269,7 +269,7 @@
+diff --git a/Sunrise/src/client/movement/movement_settings_store.h b/Sunrise/src/client/movement/movement_settings_store.h
+index bbc8d8f..ef5d7fa 100644
+--- a/Sunrise/src/client/movement/movement_settings_store.h
++++ b/Sunrise/src/client/movement/movement_settings_store.h
+@@ -46,6 +46,9 @@ void shutdown() noexcept;
  
- /** Writes the player's velocity on the physics sync, which publishes it. */
- void apply(void* component) noexcept {
--    const client::movement::Settings settings = client::movement::get();
-+    const client::movement::Settings settings = client::movement::runtime_get();
-     if (!settings.flyEnabled) {
-         return;
+ /** @return One lock-consistent copy of the current configuration. */
+ [[nodiscard]] Settings get() noexcept;
++/** Transient Frontier overlay. Never published to movement.json or the UI base settings. */
++void set_frontier_hover(bool enabled, std::uint64_t expires) noexcept;
++[[nodiscard]] Settings runtime_get() noexcept;
+ 
+ /**
+  * Publishes one configuration and writes it straight to disk.
+diff --git a/Sunrise/src/client/runtime/client_hook_activation.cpp b/Sunrise/src/client/runtime/client_hook_activation.cpp
+index 2d68b33..c5162e7 100644
+--- a/Sunrise/src/client/runtime/client_hook_activation.cpp
++++ b/Sunrise/src/client/runtime/client_hook_activation.cpp
+@@ -1,3 +1,4 @@
++#include "../frontier/frontier_native.h"
+ #include <Windows.h>
+ 
+ #include <array>
+@@ -186,9 +187,9 @@ void clear_game_targets() noexcept {
+     (void)activity::mission_launch::install();
+     // The teleport hooks attach whether or not the feature is on, so the interface can enable it
+     // without a restart. Both replacements return immediately while nothing is requested.
+-    (void)hooks::teleport::install();
+-    // Noclip owns its Havok-step target, so a patch-specific miss cannot disable teleport.
+-    (void)hooks::noclip::install();
++    const bool frontierTeleport = hooks::teleport::install();
++    const bool frontierPhysics = hooks::noclip::install();
++    frontier::start(frontierTeleport && frontierPhysics);
+     // Attaches whether or not the feature is on, so the interface can enable it without a restart.
+     (void)hooks::infinite_ammo::install();
+     // Resolves the activity config getter here; the hold itself runs on the frame tick.
+diff --git a/Sunrise/src/client/runtime/client_runtime_lifecycle.cpp b/Sunrise/src/client/runtime/client_runtime_lifecycle.cpp
+index a155061..68c6b05 100644
+--- a/Sunrise/src/client/runtime/client_runtime_lifecycle.cpp
++++ b/Sunrise/src/client/runtime/client_runtime_lifecycle.cpp
+@@ -1,3 +1,4 @@
++#include "../frontier/frontier_native.h"
+ #include "../../core/logging/log.h"
+ #include "../../core/settings/settings.h"
+ #include "../../server/bap/runtime.h"
+@@ -110,6 +111,7 @@ bool shutdown() noexcept {
+         return false;
      }
-@@ -288,7 +288,7 @@
- 
- /** Reports whether fly is on. */
- bool enabled() noexcept {
--    return client::movement::get().flyEnabled;
-+    return client::movement::runtime_get().flyEnabled;
- }
- 
- /** Sets the velocity the coming simulation step integrates. */
-@@ -297,7 +297,7 @@
-     if (body == nullptr || !read_bindings()) {
-         return;
-     }
--    noclip::write_body_velocity(body, desired_velocity(client::movement::get().flySpeed));
-+    noclip::write_body_velocity(body, desired_velocity(client::movement::runtime_get().flySpeed));
-     noclip::Vector position{};
-     noclip::read_body_position(body, position);
-     g_heightBeforeStep = position[teleport::kVerticalLane];
+     activity::mission_launch::uninstall();
++    frontier::shutdown();
+     hooks::bootflow::uninstall();
+     hooks::infinite_ammo::uninstall();
+     hooks::inactivity::uninstall();
+diff --git a/Sunrise/src/server/activity/host_runtime.cpp b/Sunrise/src/server/activity/host_runtime.cpp
+index cdccacb..87a0067 100644
+--- a/Sunrise/src/server/activity/host_runtime.cpp
++++ b/Sunrise/src/server/activity/host_runtime.cpp
+@@ -1,3 +1,4 @@
++#include "../../client/frontier/frontier_native.h"
+ /**
+  * The Activity Host instance table, event ring, reducer queue and Auth-state lane.
+  * Helpers here need the Host runtime lock; the entry points take it themselves.
+@@ -251,6 +252,8 @@ void apply_client_state_change(const ClientStateChangeInput& input, std::uint64_
+     event.clientStateHasSpawn = input.state.hasSpawn;
+     event.clientStateHasTeleport = input.state.hasTeleport;
+     event.clientEntered = input.state.entered;
++    client::frontier::observe_region(event.clientStateHasCurrentRegion, event.currentRegionIndex,
++                                     event.heldRegionIndex, event.previousRegionIndex);
+     append_event(event);
+     append_mission_input(event, nullptr);
+     instance->view.lastEventSequence = g_sequence;
+diff --git a/Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp b/Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp
+index 2230b5f..c5430a8 100644
 --- a/Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp
 +++ b/Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp
 @@ -1,3 +1,4 @@
@@ -158,7 +218,7 @@
  #include <algorithm>
  #include <array>
  #include <cctype>
-@@ -208,6 +209,7 @@
+@@ -208,6 +209,7 @@ void configure_generated_require(lua_State* state, const ProgramIdentity& identi
      catalog_api::register_metatables(state);
      manifest_api::register_metatables(state);
      world_api::register_metatables(state);
@@ -166,15 +226,3 @@
      return 0;
  }
  
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -137,3 +137,9 @@
- set_source_files_properties(Sunrise/vendor/sqlite/sqlite3.c PROPERTIES
-     COMPILE_DEFINITIONS "SQLITE_OMIT_LOAD_EXTENSION;SQLITE_THREADSAFE=1"
- )
-+
-+# Frontier native code: compiler warnings must never become a publishable candidate.
-+if(MSVC)
-+    set_source_files_properties("Sunrise/src/client/frontier/frontier_native.cpp"
-+        PROPERTIES COMPILE_OPTIONS "/WX")
-+endif()

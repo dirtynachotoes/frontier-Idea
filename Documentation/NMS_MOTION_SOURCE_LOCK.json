@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/monkeyman192/NMSpy",
+  "commit": "52e2e55493ddade1d89d3e638491afff995f5631",
+  "installed_api_version": "180383.0",
+  "files": {
+    "nmspy/data/types.py": "345a432d95083e0cbc669854d24c9cec764c5c1e2bfde021ad1707c7772e6b43",
+    "nmspy/data/basic_types.py": "c84ba1783a294db8dae99c9dd288365ec84ec252ef3ae414d48ca772d7a54d85",
+    "example_mods/playerLocation.py": "9bc3ad618e9553d37cec9e6a6ec71242a2aae20e6d627e8b0d3c97c104df186d",
+    "pyproject.toml": "d3718106541dbbe3479f9a9e3635f9c59f21aab2c1c2fc208260103909260831"
+  }
+}

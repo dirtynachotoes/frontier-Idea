@@ -9,6 +9,7 @@ import time
 from .ipc import Mapping, HEADER, STATE, COMMAND, MAGIC, VERSION, SIZE, OFFSETS, COMMANDS, ticks
 from .store import Store
 from .control import ControlMapping
+from .motion import MotionMapping
 
 
 def _clear_owned_state(mapping, epoch):
@@ -19,7 +20,7 @@ def _clear_owned_state(mapping, epoch):
                 COMMAND.pack_into(mapping.memory, offset, 0, 0)
 
 
-def run(database, test_file=None, test_stop_file=None, control_file=None, scout_link=False):
+def run(database, test_file=None, test_stop_file=None, control_file=None, scout_link=False,guardian_locomotion=False,motion_file=None):
     if test_stop_file is not None and test_file is None:
         raise ValueError('A test stop file requires the explicit file-backed test backend')
     stop_path = Path(test_stop_file) if test_stop_file is not None else None
@@ -39,6 +40,7 @@ def run(database, test_file=None, test_stop_file=None, control_file=None, scout_
             print(json.dumps(data), flush=True)
 
         control = None
+        motion = None
         try:
             with mapping.locked() as acquired:
                 if not acquired:
@@ -52,6 +54,8 @@ def run(database, test_file=None, test_stop_file=None, control_file=None, scout_
                 HEADER.pack_into(mapping.memory, 0, MAGIC, VERSION, epoch, ticks())
             control = resources.enter_context(ControlMapping(control_file)) if test_file is None or control_file is not None else None
             if control: control.start(epoch)
+            if guardian_locomotion:
+                motion=resources.enter_context(MotionMapping(motion_file));motion.start(epoch)
             emit('core_started', epoch=epoch, pid=os.getpid(), scout_link=scout_link)
             previous_live = {}
             both_live = False
@@ -100,13 +104,17 @@ def run(database, test_file=None, test_stop_file=None, control_file=None, scout_
                             emit('guardian_hover_requested',request=request,source='nms_pulse')
                         except RuntimeError as error:
                             emit('guardian_hover_not_submitted',reason=str(error))
+                if motion:motion.route(epoch,both_live)
                 time.sleep(.02)
             emit('core_stopped', reason='test_stop_file')
         except KeyboardInterrupt:
             emit('core_stopped', reason='keyboard_interrupt')
         finally:
             try:
-                if control: control.stop(epoch)
+                try:
+                    if motion:motion.stop(epoch)
+                finally:
+                    if control: control.stop(epoch)
             finally:
                 _clear_owned_state(mapping, epoch)
 
@@ -118,10 +126,12 @@ def main():
     parser.add_argument('--test-stop-file', help='Graceful shutdown marker for file-backed tests only')
     parser.add_argument('--control-file', help='Isolated native control test backend')
     parser.add_argument('--scout-link', action='store_true', help='NMS bridge pulse toggles temporary native Guardian hover')
+    parser.add_argument('--guardian-locomotion',action='store_true',help='Experimental Guardian movement guest; F9 in NMS arms')
+    parser.add_argument('--motion-file',help='Isolated motion mapping test file')
     args = parser.parse_args()
     if args.test_stop_file is not None and args.test_file is None:
         parser.error('--test-stop-file requires --test-file')
-    run(args.database, args.test_file, args.test_stop_file, args.control_file, args.scout_link)
+    run(args.database, args.test_file, args.test_stop_file, args.control_file, args.scout_link,args.guardian_locomotion,args.motion_file)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 // Standalone Frontier contract/policy, never loads or builds Sunrise.
 #include "../../Native/frontier_policy.h"
 #include "../../Native/frontier_readiness.h"
+#include "../../Native/frontier_motion.h"
 #include <array>
 #include <limits>
 #include <cstdio>
@@ -57,6 +58,24 @@ int main(int argc,char** argv){
   diagnosticCommand.readinessBits=0;unobserved.tick(diagnosticCommand,now,50,true,true);
   check(observed.hovering==unobserved.hovering&&observed.ack==unobserved.ack&&observed.status==unobserved.status&&observed.context==unobserved.context);
  }
+ check(sizeof(MotionBlock)==256);
+ MotionHeader mh{};mh.magic=motion_magic;mh.version=1;mh.bytes=256;mh.headerBytes=64;mh.epoch=7;mh.heartbeat=10000;mh.enabled=1;
+ MotionIntent mi{};mi.heartbeat=10000;mi.incarnation=99;mi.sequence=1;mi.keys=move_forward|move_sprint;mi.flags=3;
+ check(motion_valid(mh,mi,10000,99));check(!motion_valid(mh,mi,10000,98));check(!motion_valid(mh,mi,12000,99));
+ mi.flags=0;check(!motion_valid(mh,mi,10000,99));mi.flags=3;mi.keys=64;check(!motion_valid(mh,mi,10000,99));mi.keys=1;
+ MotionKeys keys;keys.until=12000;keys.members[87]=true;keys.members[83]=true;keys.pressed[87]=true;
+ bool held=false;check(keys.answer(87,10000,held)&&held);check(keys.answer(83,10000,held)&&!held);
+ check(!keys.answer(87,12000,held));check(!keys.answer(256,10000,held));
+ MotionAccumulator accumulated;SpatialSlot hostBasis{};hostBasis.forward[2]=1;hostBasis.right[0]=1;hostBasis.up[1]=1;
+ std::array<float,3> pos{10,20,30},guardianForward{1,0,0};
+ check(accumulated.sample(7,99,3,pos,guardianForward,hostBasis));check(accumulated.total[2]==0);
+ pos[0]+=2;pos[1]-=1;pos[2]+=3;check(accumulated.sample(7,99,3,pos,guardianForward,hostBasis));
+ check(accumulated.total[0]==1&&accumulated.total[1]==3&&accumulated.total[2]==2); // Different actual host/guest frames
+ check(accumulated.sample(7,99,3,pos,guardianForward,hostBasis));check(accumulated.total[2]==2); // Idle does not create motion
+ const auto generation=accumulated.generation;accumulated.reset();check(accumulated.sample(7,99,3,pos,guardianForward,hostBasis));
+ check(accumulated.generation!=generation&&accumulated.total[2]==0); // Explicit re-arm cannot replay earlier travel
+ check(accumulated.sample(8,99,3,pos,guardianForward,hostBasis));check(accumulated.total[2]==0);
+ guardianForward={0,0,0};check(!accumulated.sample(8,99,3,pos,guardianForward,hostBasis));
  check(sizeof(SpatialSlot)==128&&sizeof(ControlBlock)==128);
  HoverPolicy p;p.world(true,3,10);const auto context=p.context;
  ControlBlock c{};c.magic=control_magic;c.version=1;c.bytes=128;c.headerBytes=64;
@@ -100,6 +119,12 @@ int main(int argc,char** argv){
   wire.readinessBits=goodBits;
   std::ofstream diagnostic(std::string(argv[1])+".diagnostics",std::ios::binary);
   diagnostic.write(reinterpret_cast<const char*>(&wire),128);check(bool(diagnostic));
+  MotionBlock motionWire{};motionWire.header=mh;motionWire.host=mi;motionWire.routed=mi;
+  motionWire.guest.heartbeat=10000;motionWire.guest.incarnation=50;motionWire.guest.context=3;motionWire.guest.sequence=4;
+  motionWire.guest.displacement[0]=1;motionWire.guest.displacement[1]=2;motionWire.guest.displacement[2]=3;
+  motionWire.guest.flags=1;motionWire.guest.scanReads=12;motionWire.guest.generation=5;
+  std::ofstream motionFile(std::string(argv[1])+".motion",std::ios::binary);
+  motionFile.write(reinterpret_cast<const char*>(&motionWire),256);check(bool(motionFile));
   std::ofstream out(argv[1],std::ios::binary);out.write(reinterpret_cast<const char*>(&slot),128);check(bool(out));}
  std::puts("PASS: cached Guardian readiness, predicate diagnostics, transition observer isolation, native policy, expiry, context, replay refusal, region predicate and spatial ABI (no games)");
 }

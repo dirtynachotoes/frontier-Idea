@@ -2,14 +2,18 @@
 #include "frontier_native.h"
 #include "frontier_policy.h"
 #include "frontier_readiness.h"
+#include "frontier_motion.h"
 #include <Windows.h>
 #include <atomic>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <utility>
 #include "../hooks/teleport/runtime.h"
 #include "../hooks/bootflow/bootflow_hook_lifecycle.h"
 #include "../player/player_position.h"
+#include "../hooks/polled_input/runtime.h"
+#include "../../state/account/account_state.h"
 #include "../movement/movement_settings_store.h"
 #include "../../core/logging/log.h"
 namespace sunrise::client::frontier {
@@ -29,7 +33,12 @@ struct Region {
  bool acquire() noexcept {const DWORD result=WaitForSingleObject(mutex,0);if(result==WAIT_ABANDONED){ReleaseMutex(mutex);close();return false;}return result==WAIT_OBJECT_0;}
  void release() noexcept {ReleaseMutex(mutex);}
 };
-Region bridge,spatial,control;
+Region bridge,spatial,control,motion;
+SRWLOCK motionKeysGate=SRWLOCK_INIT;
+destiny_frontier::MotionKeys motionKeys;
+destiny_frontier::MotionAccumulator motionAccumulator;
+std::atomic_uint64_t motionScanReads{0};
+std::uint64_t motionSequence=0;
 SRWLOCK gate=SRWLOCK_INIT;
 std::atomic_bool enabled{false},cachedConnected{false},cachedLive{false};
 std::atomic_uint32_t sequence{0},cachedTarget{0};
@@ -88,6 +97,51 @@ void publish_status(std::uint64_t now,bool ready,bool hostReady,std::uint32_t re
  result.hostIncarnation=hostReady?host.incarnation:0;result.hostSequence=hostReady?host.sequence:0;
  std::memcpy(control.view+64,reinterpret_cast<unsigned char*>(&result)+64,64);control.release();
 }
+void poll_motion(std::uint64_t now,bool ready,bool hostReady,const hooks::teleport::Vector& position) noexcept {
+ MotionKeys nextKeys{};MotionHeader header{};MotionIntent intent{};bool valid=false;
+ if(motion.open(motionName,motionMutex,256,false)&&motion.acquire()){
+  std::memcpy(&header,motion.view,64);std::memcpy(&intent,motion.view+128,64);motion.release();
+  valid=ready&&hostReady&&peer_live(now)&&header.epoch==legacy.header.epoch&&command.epoch==header.epoch&&fresh(now,command.heartbeat)&&!policy.hovering&&!movement::get().flyEnabled&&
+   hooks::polled_input::is_installed()&&motion_valid(header,intent,now,host.incarnation)&&
+   (host.flags&29U)==29U;
+ }
+ hooks::teleport::CameraPose pose{};
+ valid=valid&&hooks::teleport::camera_pose(pose)&&finite(pose.forward)&&
+  (pose.forward[0]*pose.forward[0]+pose.forward[1]*pose.forward[1]>0.0F);
+ if(valid){
+  using Action=state::account::settings::bindings::Action;
+  const auto account=state::account_snapshot();
+  const std::array<Action,6> actions{Action::moveForward,Action::moveBackward,Action::moveLeft,Action::moveRight,Action::holdSprint,Action::jump};
+  for(unsigned i=0;i<actions.size();++i){
+   const auto& binding=account.settings.keyBindings.values[static_cast<std::size_t>(actions[i])];
+   const auto authored=binding.primary.has_value()?binding.primary:binding.secondary;
+   if(!authored.has_value()){if(intent.keys&(1U<<i))valid=false;continue;}
+   const auto code=*authored;const unsigned key=hooks::teleport::action_key(code);
+   if(!key||key>=256){if(intent.keys&(1U<<i))valid=false;continue;}
+   nextKeys.members[key]=true;nextKeys.pressed[key]=nextKeys.pressed[key]||((intent.keys&(1U<<i))!=0);
+   if(intent.keys&(1U<<i)){
+    for(const auto modifier:{std::pair<unsigned,unsigned>{0x0100U,VK_MENU},{0x0200U,VK_CONTROL},{0x0400U,VK_SHIFT}}){
+     if(code&modifier.first){nextKeys.members[modifier.second]=true;nextKeys.pressed[modifier.second]=true;}
+    }
+   }
+  }
+  nextKeys.until=(std::min)((std::min)(header.heartbeat,intent.heartbeat),
+   (std::min)(host.heartbeat,(std::min)(legacy.header.heartbeat,legacy.nms.heartbeat)))+timeout_ms;
+ }
+ if(!valid){nextKeys={};motionAccumulator.reset();}
+ AcquireSRWLockExclusive(&motionKeysGate);motionKeys=nextKeys;ReleaseSRWLockExclusive(&motionKeysGate);
+ bool resultValid=valid&&motionAccumulator.sample(header.epoch,intent.incarnation,policy.context,position,pose.forward,host);
+ if(!resultValid){motionAccumulator.reset();AcquireSRWLockExclusive(&motionKeysGate);motionKeys={};ReleaseSRWLockExclusive(&motionKeysGate);}
+ if(motion.view&&motion.acquire()){
+  MotionHeader current{};std::memcpy(&current,motion.view,64);
+  MotionResult result{};result.heartbeat=now;result.incarnation=incarnation;result.context=policy.context;
+  result.sequence=++motionSequence;result.flags=static_cast<std::uint32_t>(resultValid&&current.epoch==header.epoch&&fresh(now,current.heartbeat));
+  result.scanReads=motionScanReads.load();result.generation=motionAccumulator.generation;
+  if(result.flags)for(unsigned lane=0;lane<3;++lane)result.displacement[lane]=motionAccumulator.total[lane];
+  std::memcpy(motion.view+192,&result,64);motion.release();
+ }
+}
+
 }
 void start(bool hooksReady) noexcept {
  AcquireSRWLockExclusive(&gate);
@@ -135,16 +189,25 @@ void tick() noexcept {
   core::log::writef(core::log::Channel::client,core::log::Level::info,"ev=frontier_native hover=%u ack=%llu status=%u context=%llu host_seq=%u",static_cast<unsigned>(policy.hovering),static_cast<unsigned long long>(policy.ack),policy.status,static_cast<unsigned long long>(policy.context),host.sequence);
   lastHover=policy.hovering;lastAck=policy.ack;lastStatus=policy.status;
  }
+ poll_motion(now,ready,hostReady,position);
  if(polling)publish_status(now,ready,hostReady,readinessBits);
  ReleaseSRWLockExclusive(&gate);
 }
 void legacy_status(std::uint32_t& target,bool& connected,bool& live) noexcept {
  target=cachedTarget.load();connected=enabled.load()&&cachedConnected.load()&&GetTickCount64()<cachedUntil.load();live=connected&&cachedLive.load();
 }
+bool motion_key(unsigned virtualKey,bool& held) noexcept {
+ if(!TryAcquireSRWLockShared(&motionKeysGate))return false;
+ const bool overrideKey=motionKeys.answer(virtualKey,GetTickCount64(),held);
+ ReleaseSRWLockShared(&motionKeysGate);
+ if(overrideKey)motionScanReads.fetch_add(1,std::memory_order_relaxed);
+ return overrideKey;
+}
 void shutdown() noexcept {
  enabled.store(false);AcquireSRWLockExclusive(&gate);
+ AcquireSRWLockExclusive(&motionKeysGate);motionKeys={};ReleaseSRWLockExclusive(&motionKeysGate);motionAccumulator.reset();
  movement::set_frontier_hover(false,0);cachedConnected.store(false);cachedLive.store(false);cachedUntil.store(0);
  if(control.view&&control.acquire()){std::memset(control.view+64,0,64);control.release();}
- bridge.close();spatial.close();control.close();ReleaseSRWLockExclusive(&gate);
+ bridge.close();spatial.close();control.close();motion.close();ReleaseSRWLockExclusive(&gate);
 }
 }

@@ -21,3 +21,7 @@ Every frame validates loaded-world state, local-component ownership and a fresh 
 IPC polls run at 100 ms, matching the existing NMS publication interval; Core remains at 20 ms. Missed locks retain only original-timestamp-bounded data. The existing 2,000 ms budget is reused, never extended by cache receipt or a retry. Explicit invalid/unready/peer-loss state clears the override; expiry bounds loss when notification cannot be observed. No worker thread touches a Guardian component. Shutdown disables ingress/ticks, clears the override and closes owned handles.
 
 Next gameplay slice: host-controlled, bounded Guardian motion and a corresponding visible host movement result. Before writing NMS pose, identify its actual supported movement/placement API and its collision relationship. Reuse Sunrise's existing local-owner physics/velocity seams; introduce one local plane/proxy before nearby terrain collision. Do not copy a galaxy or promise guest collision on NMS terrain yet.
+
+## Guardian locomotion candidate
+
+The optional Motion V1 channel carries host input into Sunrise's existing game-key polling seam and returns actual published Guardian displacement. NMS Update before/after applies that result through maintained typed SetToPosition. Native camera-relative displacement is translated into the host graphics orientation; no Guardian physics are recreated. Existing activity geometry remains the guest collision environment. See Documentation/GUARDIAN_LOCOMOTION.md for scope, source paths and pending runtime uncertainties.

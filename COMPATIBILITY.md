@@ -16,3 +16,7 @@ NMS remains the exact previously validated local executable, NMSpy 180383.0 and 
 V2 is now wire version 2 and name Spatial_v2 on both engines. Prior Spatial_v1 components cannot join it. The event bridge remains v1. The native command/result contract is a separate v1 mapping. Native lease readiness requires a loaded/local Guardian and a fresh valid NMS pose; communication/readiness survives any activity Lua selection, but game lifecycle pauses/suspension naturally expire leases.
 
 Hardware/FPS/background-rendering changes are not introduced or guessed. The eventual session specifically checks native guest progress while NMS is focused. If the guest frame lifecycle stops in the background, do not hide that with timeout expansion; guest scheduling is then the next actual gameplay blocker.
+
+## Locomotion candidate
+
+Sunrise remains pinned to 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c. NMSpy remains 180383.0 / pyMHF 0.2.4 under existing binary validation. The new maintained methods are cGcPlayer.Update and SetToPosition; reviewed NMSpy source is pinned in Documentation/NMS_MOTION_SOURCE_LOCK.json. This is source/ABI verified; background input and per-frame NMS actuation are runtime pending. Default keyboard only; no NMS geometry export or custom controller bindings.

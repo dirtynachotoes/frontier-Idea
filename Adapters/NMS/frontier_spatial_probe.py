@@ -1,6 +1,6 @@
-"""Destiny Frontier read-only NMS spatial telemetry probe.
+"""Destiny Frontier spatial host with explicit opt-in Guardian locomotion.
 
-Separate from frontier_nms_probe.py. It does not write movement globals or game state.
+Spatial delivery and F8 behavior remain unchanged. F9 movement is enabled only by the opt-in Core motion mode.
 It publishes live player position/orientation to Local\\DestinyFrontier_Spatial_v2.
 Requires the same validated NMSpy 180383.0 / pyMHF 0.2.4 test environment.
 """
@@ -46,18 +46,21 @@ validate_binary_before_registering_hooks()
 
 from pymhf import Mod
 import nmspy.data.types as nms
+import nmspy.data.basic_types as basic
 from nmspy.common import gameData
 from frontier.spatial import SpatialMapping
 from frontier.control import ControlMapping
 from frontier.host_input import HostKey
+from frontier.motion_host import HostMotion
+from frontier.ipc import ticks
 
 log = logging.getLogger("DestinyFrontier.NMS.Spatial")
 
 class DestinyFrontierNMSSpatialProbe(Mod):
-    __version__='0.1.0-spatial-v2'
-    __description__='Read-only host pose/context delivery to native Guardian guest'
+    __version__='0.2.0-guardian-motion'
+    __description__='Spatial V2 host and opt-in native Guardian locomotion'
     def __init__(self):
-        super().__init__();self.mapping=None;self.last_poll=0;self.incarnation=secrets.randbits(63) or 1;self.sequence=0;self.enabled=True;self.control=None;self.key=HostKey();self.pulse_pending=False
+        super().__init__();self.mapping=None;self.last_poll=0;self.incarnation=secrets.randbits(63) or 1;self.sequence=0;self.enabled=True;self.control=None;self.key=HostKey();self.pulse_pending=False;self.motion_host=None;self.motion_base=None;self.last_motion_armed=False;self.last_motion_log=0
     @nms.cGcApplication.Update.after
     def update(self,this):
         now=time.monotonic()
@@ -88,3 +91,51 @@ class DestinyFrontierNMSSpatialProbe(Mod):
             log.exception('Spatial V2 stopped; event bridge remains independent')
             if self.mapping is not None:self.mapping.close();self.mapping=None
             if self.control is not None:self.control.close();self.control=None
+
+    @nms.cGcPlayer.SetToPosition.before
+    def motion_position_seam(self,this,lPos,lDir,lVel):
+        # Registers the maintained typed method; no raw function addresses or offsets.
+        pass
+    @nms.cGcPlayer.Update.before
+    def motion_before(self,this,lfStep):
+        self.motion_base=None
+        if not self.enabled:return
+        player=gameData.player
+        if player is None or ctypes.addressof(player)!=ctypes.addressof(this.contents):return
+        try:
+            if self.control is None:self.control=ControlMapping()
+            status=self.control.status()
+            if self.motion_host is None:self.motion_host=HostMotion()
+            delta=self.motion_host.exchange(self.incarnation,status)
+            if self.motion_host.armed!=self.last_motion_armed:
+                log.info('Guardian locomotion armed=%s (F9); native displacement only',self.motion_host.armed)
+                self.last_motion_armed=self.motion_host.armed
+            if delta is None or not player.mbSpawned or player.mbIsTransitioning or player.mbIsDying:return
+            # Preserve the engine's explicit local/offset representation; never treat a plain
+            # player-position vector as an absolute cTkBigPos.
+            base=basic.cTkBigPos.from_buffer_copy(player.mGraphicsMatrix.pos)
+            for lane,change in zip(('x','y','z'),delta):setattr(base.local,lane,getattr(base.local,lane)+change)
+            direction=basic.cTkVector3(-player.mGraphicsMatrix.at.x,-player.mGraphicsMatrix.at.y,-player.mGraphicsMatrix.at.z)
+            self.motion_base=(base,direction,self.motion_host.valid_until)
+            if any(delta) and time.monotonic()-self.last_motion_log>=1:
+                self.last_motion_log=time.monotonic()
+                log.info('Guardian result queued delta=%s input_scan_reads=%s',delta,self.motion_host.last_result[8])
+        except Exception:
+            if self.motion_host:self.motion_host.close()
+            self.motion_host=None;self.motion_base=None
+            log.exception('Locomotion disabled; normal NMS input resumes, legacy bridge unchanged')
+    @nms.cGcPlayer.Update.after
+    def motion_after(self,this,lfStep):
+        target=self.motion_base;self.motion_base=None
+        if target is None:return
+        player=gameData.player
+        if player is None or ctypes.addressof(player)!=ctypes.addressof(this.contents):return
+        try:
+            position,direction,expiry=target
+            if ticks()>=expiry or not self.motion_host.keys.focused() or not player.mbSpawned or player.mbIsTransitioning or player.mbIsDying:return
+            velocity=basic.cTkVector3(0,0,0)
+            player.SetToPosition(ctypes.byref(position),ctypes.byref(direction),ctypes.byref(velocity))
+        except Exception:
+            if self.motion_host:self.motion_host.close()
+            self.motion_host=None
+            log.exception('NMS result actuation failed; locomotion disarmed, normal input resumes')

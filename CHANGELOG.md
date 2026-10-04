@@ -25,3 +25,7 @@
 - Replaced the existing CI workflow with one bounded remote native build producing one complete candidate and matching Sunrise source.
 
 Closed historical compile/runtime facts are retained. No game launch, intermediate installation, local Sunrise compilation, progression systems or live-Destiny modification was performed.
+
+## Guardian locomotion candidate
+
+Added opt-in motion intent/result channel, lease-limited authored native key overrides, actual Guardian displacement translation, typed NMS result actuation and fake callback regression coverage. Preserved Control128, SpatialV2, proven bridge/heartbeat/readiness and existing Anti-AFK. Startup discovery remains blocked as documented; manual bootstrap is permitted. Runtime locomotion acceptance pending.

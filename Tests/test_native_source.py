@@ -49,3 +49,17 @@ class NativeSourceTests(unittest.TestCase):
         self.assertIn('policy.tick(command,now,incarnation,ready&&hostReady,',native)
         protocol=(ROOT/'Native/frontier_protocol.h').read_text(encoding='utf-8')
         self.assertIn('offsetof(ControlBlock,readinessBits)==108',protocol)
+
+    def test_locomotion_uses_authored_polled_keys_and_actual_snapshot_delta(self):
+        native=(ROOT/'Native/frontier_native.cpp').read_text()
+        patch=(ROOT/'Native/Sunrise.patch').read_text()
+        motion=(ROOT/'Native/frontier_motion.h').read_text()
+        self.assertIn('hooks::teleport::action_key(code)',native)
+        self.assertIn('account.settings.keyBindings.values',native)
+        self.assertIn('!policy.hovering&&!movement::get().flyEnabled',native)
+        self.assertIn('motionAccumulator.sample(',native)
+        self.assertIn('position[0]-previous[0]',motion)
+        self.assertIn('frontier::motion_key(',patch)
+        for forbidden in ('SendInput','SetForegroundWindow','WriteProcessMemory','CreateThread'):
+            self.assertNotIn(forbidden,native)
+        self.assertNotIn('edz_freeroam',native)
