@@ -16,20 +16,42 @@ jobs:
         shell: pwsh
         run: |
           cmake --version
-          & "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+
+          $candidates = @(
+            "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe",
+            "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe"
+          )
+
+          $vswhere = $candidates |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+
+          if (-not $vswhere) {
+            throw "vswhere.exe was not found on the GitHub Windows runner"
+          }
+
+          Write-Host "VSWhere: $vswhere"
+          & $vswhere -latest -products * -property installationPath
 
       - name: Clone pinned Sunrise
         shell: pwsh
         run: |
           git clone https://github.com/stanuwu/Sunrise.git Sunrise-Probe
           git -C Sunrise-Probe checkout 1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c
-          if ((git -C Sunrise-Probe rev-parse HEAD).Trim() -ne '1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c') { throw 'Wrong Sunrise revision' }
+
+          $head = (git -C Sunrise-Probe rev-parse HEAD).Trim()
+          if ($head -ne '1da7f7a86cbfbe5c92dc91287594d0ac6c70eb1c') {
+            throw "Wrong Sunrise revision: $head"
+          }
 
       - name: Apply Frontier spatial probe
         shell: pwsh
         run: |
           python Tools/prepare_sunrise_spatial.py Sunrise-Probe
-          git -C Sunrise-Probe diff -- Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp Sunrise/src/server/activity/mission/frontier_probe.h
+
+          git -C Sunrise-Probe diff -- `
+            Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp `
+            Sunrise/src/server/activity/mission/frontier_probe.h
 
       - name: Configure Release x64
         shell: pwsh
@@ -45,11 +67,19 @@ jobs:
         shell: pwsh
         run: |
           $dll = 'Sunrise-Probe/build/x64/Release/steam_api64.dll'
-          if (!(Test-Path $dll)) { throw "Expected DLL not found: $dll" }
-          Get-Item $dll | Format-List FullName,Length,LastWriteTime
-          Get-FileHash $dll -Algorithm SHA256 | Format-List
+
+          if (!(Test-Path $dll)) {
+            throw "Expected DLL not found: $dll"
+          }
+
+          Get-Item $dll |
+            Format-List FullName, Length, LastWriteTime
+
           Get-FileHash $dll -Algorithm SHA256 |
-            Select-Object Algorithm,Hash,Path |
+            Format-List
+
+          Get-FileHash $dll -Algorithm SHA256 |
+            Select-Object Algorithm, Hash, Path |
             ConvertTo-Json |
             Set-Content Sunrise-Probe/build/x64/Release/steam_api64.sha256.json
 
