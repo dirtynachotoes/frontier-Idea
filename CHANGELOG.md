@@ -1,5 +1,12 @@
 # Changes
 
+2026-10-04 — native readiness lifetime diagnostics:
+- Retain the installed snapshot fix and all safety/lease checks; static source cannot identify the runtime failing predicate.
+- Publish optional readiness bits in the former reserved word at offset 108, preserving the 128-byte ABI and existing fixtures.
+- Expose individual Guardian/host predicates in control status and log only transitions; skipped ownership and old producers report unknown.
+- Add exhaustive predicate masks, transition/policy isolation, status ownership and cross-language diagnostic fixture tests.
+- Candidate is diagnostics only, with one focused idle-readiness runtime session.
+
 2026-10-04 — native readiness regression fix:
 - Use the pinned Sunrise published player snapshot instead of requiring a fresh rigid-body read every frame.
 - Preserve in-world, local component/ownership, finite-position checks and all lease/context/expiry behavior.

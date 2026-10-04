@@ -8,6 +8,16 @@ NAME='Local\\DestinyFrontier_Control_v1'
 CORE=struct.Struct('<IIII5QII')
 NATIVE=struct.Struct('<4Q4I2Q')
 MAGIC=0x43465444
+READINESS_BITS=dict(ready_in_world=1<<0,ready_component=1<<1,ready_ownership=1<<2,
+                   ready_snapshot=1<<3,ready_finite=1<<4,ready_combined=1<<5,
+                   ready_host=1<<6,ready_ownership_checked=1<<7)
+READINESS_VALID=1<<31
+def readiness_status(bits):
+    available=bool(bits&READINESS_VALID)
+    fields={name:bool(bits&mask) if available else None for name,mask in READINESS_BITS.items()}
+    # Ownership is intentionally not evaluated when out of world or without a component.
+    if not fields['ready_ownership_checked']:fields['ready_ownership']=None
+    return dict(readiness_diagnostics=available,readiness_bits=bits,**fields)
 class ControlMapping(Region):
     def __init__(self,test_file=None): super().__init__(NAME,128,test_file)
     def start(self,epoch):
@@ -32,7 +42,7 @@ class ControlMapping(Region):
             c=CORE.unpack_from(self.memory); n=NATIVE.unpack_from(self.memory,64)
             return dict(core_valid=c[:4]==(MAGIC,1,128,64) and bool(c[4]) and 0<=ticks()-c[5]<2000,
                         peers_live=bool(c[10]&1),scout_link=bool(c[10]&2),request=c[6],native_heartbeat=n[0],incarnation=n[1],context=n[2],
-                        ack=n[3],ready=bool(n[4]),status=n[5],hover=bool(n[6]),host_incarnation=n[8],host_sequence=n[9])
+                        ack=n[3],ready=bool(n[4]),status=n[5],hover=bool(n[6]),host_incarnation=n[8],host_sequence=n[9],**readiness_status(n[7]))
     def request_hover(self,enabled):
         with self.locked() as acquired:
             if not acquired:raise RuntimeError('Control IPC busy; command not submitted')

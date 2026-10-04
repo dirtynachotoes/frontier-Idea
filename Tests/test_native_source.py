@@ -36,7 +36,16 @@ class NativeSourceTests(unittest.TestCase):
         self.assertIn('const auto playerSnapshot=player::position::snapshot();',native)
         self.assertIn('const auto position=playerSnapshot.position;',native)
         self.assertIn('const bool inWorld=hooks::bootflow::in_world();',native)
-        self.assertIn('guardian_ready(inWorld,component!=nullptr,',native)
-        self.assertIn('inWorld&&component&&hooks::teleport::owns_local_player(component),playerSnapshot)',native)
+        self.assertIn('guardian_readiness_bits(inWorld,component!=nullptr,ownsLocal,playerSnapshot)',native)
+        self.assertIn('const bool ownsLocal=inWorld&&component&&hooks::teleport::owns_local_player(component);',native)
         self.assertIn('poll_spatial(now,ready,position)',native)
         self.assertNotIn('read_position(',native)
+
+    def test_diagnostics_are_native_owned_and_transition_only(self):
+        native=(ROOT/'Native/frontier_native.cpp').read_text(encoding='utf-8')
+        self.assertIn('result.readinessBits=readinessBits;',native)
+        self.assertIn('if(readinessTransitions.observe(readinessBits))',native)
+        self.assertIn('ev=frontier_readiness',native)
+        self.assertIn('policy.tick(command,now,incarnation,ready&&hostReady,',native)
+        protocol=(ROOT/'Native/frontier_protocol.h').read_text(encoding='utf-8')
+        self.assertIn('offsetof(ControlBlock,readinessBits)==108',protocol)

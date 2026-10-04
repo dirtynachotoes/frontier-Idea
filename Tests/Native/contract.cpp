@@ -30,6 +30,33 @@ int main(int argc,char** argv){
   cached.position[axis]=std::numeric_limits<float>::quiet_NaN();check(!guardian_ready(true,true,true,cached));
   cached.position[axis]=saved;
  }
+ // Exhaustive readiness bit diagnostics, including guarded ownership and nonfinite position.
+ for(unsigned inputs=0;inputs<32;++inputs){
+  const bool world=(inputs&1U)!=0,component=(inputs&2U)!=0,owns=(inputs&4U)!=0;
+  cached.present=(inputs&8U)!=0;cached.position={1.0f,2.0f,(inputs&16U)?3.0f:std::numeric_limits<float>::quiet_NaN()};
+  const auto bits=guardian_readiness_bits(world,component,owns,cached);
+  const auto expected=ready_diagnostics|(inputs&1U)|(inputs&2U)|((world&&component&&owns)?4U:0U)|
+   (inputs&8U)|(inputs&16U)|((inputs==31U)?32U:0U)|((world&&component)?128U:0U);
+  check(bits==expected);check(guardian_ready(world,component,owns,cached)==(inputs==31U));
+ }
+ cached.present=true;cached.position={1.0f,2.0f,3.0f};
+ const auto goodBits=guardian_readiness_bits(true,true,true,cached)|ready_host;
+ ReadinessTransitions transitions;
+ check(transitions.observe(goodBits));check(!transitions.observe(goodBits));
+ check(transitions.observe(goodBits&~ready_ownership));check(!transitions.observe(goodBits&~ready_ownership));
+ check(transitions.observe(goodBits));
+ // Diagnostics and their transition observer do not participate in hover policy.
+ HoverPolicy observed,unobserved;observed.world(true,3,10);unobserved.world(true,3,10);
+ ControlBlock diagnosticCommand{};diagnosticCommand.magic=control_magic;diagnosticCommand.version=1;
+ diagnosticCommand.bytes=128;diagnosticCommand.headerBytes=64;diagnosticCommand.epoch=1;
+ diagnosticCommand.heartbeat=10000;diagnosticCommand.request=1;diagnosticCommand.expectedIncarnation=50;
+ diagnosticCommand.expectedContext=observed.context;diagnosticCommand.opcode=hover_on;diagnosticCommand.flags=1;
+ for(const auto now:{10000ULL,10100ULL,12000ULL}){
+  diagnosticCommand.readinessBits=goodBits;transitions.observe(goodBits);
+  observed.tick(diagnosticCommand,now,50,true,true);
+  diagnosticCommand.readinessBits=0;unobserved.tick(diagnosticCommand,now,50,true,true);
+  check(observed.hovering==unobserved.hovering&&observed.ack==unobserved.ack&&observed.status==unobserved.status&&observed.context==unobserved.context);
+ }
  check(sizeof(SpatialSlot)==128&&sizeof(ControlBlock)==128);
  HoverPolicy p;p.world(true,3,10);const auto context=p.context;
  ControlBlock c{};c.magic=control_magic;c.version=1;c.bytes=128;c.headerBytes=64;
@@ -70,6 +97,9 @@ int main(int argc,char** argv){
   wire.epoch=1;wire.heartbeat=2;wire.request=3;wire.expectedIncarnation=4;wire.expectedContext=5;wire.opcode=1;wire.flags=3;
   wire.nativeHeartbeat=6;wire.nativeIncarnation=7;wire.nativeContext=8;wire.ack=9;wire.nativeReady=1;wire.status=1;wire.hover=1;wire.hostIncarnation=10;wire.hostSequence=11;
   std::ofstream ctrl(std::string(argv[1])+".control",std::ios::binary);ctrl.write(reinterpret_cast<const char*>(&wire),128);check(bool(ctrl));
+  wire.readinessBits=goodBits;
+  std::ofstream diagnostic(std::string(argv[1])+".diagnostics",std::ios::binary);
+  diagnostic.write(reinterpret_cast<const char*>(&wire),128);check(bool(diagnostic));
   std::ofstream out(argv[1],std::ios::binary);out.write(reinterpret_cast<const char*>(&slot),128);check(bool(out));}
- std::puts("PASS: cached Guardian readiness, native policy, expiry, context, replay refusal, region predicate and spatial ABI (no games)");
+ std::puts("PASS: cached Guardian readiness, predicate diagnostics, transition observer isolation, native policy, expiry, context, replay refusal, region predicate and spatial ABI (no games)");
 }

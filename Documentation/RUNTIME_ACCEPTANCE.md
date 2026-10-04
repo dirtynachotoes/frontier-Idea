@@ -1,9 +1,12 @@
-# One readiness/hover runtime retest
+# One readiness-lifetime runtime session
 
-Use the single corrected remotely built candidate. The previous installed test already proved Core, both live paths, heartbeat repair, NMS Spatial V2 delivery, native lifecycle/heartbeat/host consumption and F8 input. Do not repeat separate tests of those paths.
+Install this single consolidated diagnostics-only candidate once using the existing backed-up installer, known paths and offline fingerprint. Keep configuration/saves/loaders unchanged. Close Core and both games for installation; no individual DLL copying is required.
 
-1. With games/Core stopped, install this candidate once using Tools/install_candidate.py and the same established Core/NMS/offline paths and offline executable fingerprint. Preserve existing configuration and saves; the installer backs up replaced files. No intermediate DLL installation is needed.
-2. Start Core with the existing scout-link configuration, start the supported offline Sunrise activity, then NMS. Keep NMS foreground and the existing base Sunrise fly setting off. Run the existing `python -m frontier.control status` from the Core environment: expect `ready: true` once the local Guardian is present.
-3. Press F8 once: expect request acknowledgement, `hover: true`, and visible NMS movement assist. Press F8 again: expect a new acknowledgement, `hover: false`, and clean baseline restoration. Record status/logs and stop.
+This session resolves only which readiness condition changes after the Guardian becomes ready. No speculative lifetime fix is included. Already-proven bridge, heartbeat, Spatial V2, F8/control and native lifecycle need no separate tests.
 
-This resolves only whether the published Guardian snapshot repairs the false unready condition and enables the already-implemented reversible native command/host result. It does not claim shared-space collision or Guardian-driven NMS physics.
+1. Start Core with the existing configuration, start one already-supported offline Sunrise activity and let the Guardian become active normally. Start NMS and keep it foreground.
+2. From the existing Core command environment run `python -m frontier.control status`. Read the ready_* predicates and readiness_diagnostics. If Guardian-ready becomes true, leave the Guardian idle and sample status for about 30 seconds to cover the previously observed roughly two-second loss. In PowerShell, `1..30 | ForEach-Object { python -m frontier.control status; Start-Sleep -Seconds 1 }` performs those samples without relaunching games.
+3. If readiness drops or never becomes true, keep the status output and matching Sunrise ev=frontier_readiness transition lines (including tick_ms/context), then stop. Null ready_ownership with ready_ownership_checked=false means skipped evaluation, not proven ownership failure. ready_combined=true with ready_host=false identifies the separate host gate. Several false predicates are reported together; do not infer unseen engine behavior.
+4. If readiness remains stable, press F8 once to confirm the existing command still acknowledges/activates hover and NMS assist, then once more for clean disable/baseline. Stop and retain the status/logs.
+
+The predicate evidence determines the next narrow fix. This candidate neither claims the lifetime problem is fixed nor schedules another speculative runtime test.

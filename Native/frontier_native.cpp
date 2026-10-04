@@ -43,6 +43,7 @@ std::uint32_t spatialSequence=0;
 bool lastHover=false;
 std::uint64_t lastAck=0;
 std::uint32_t lastStatus=idle;
+ReadinessTransitions readinessTransitions;
 bool finite(const hooks::teleport::Vector& v) noexcept {return std::isfinite(v[0])&&std::isfinite(v[1])&&std::isfinite(v[2]);}
 bool peer_live(std::uint64_t now) noexcept {
  return legacy.header.magic==bridge_magic&&legacy.header.version==1&&legacy.header.epoch&&fresh(now,legacy.header.heartbeat)&&
@@ -79,17 +80,18 @@ void read_control() noexcept {
  if(!control.open(controlName,controlMutex,128,true)||!control.acquire())return;
  std::memcpy(&command,control.view,64);control.release();
 }
-void publish_status(std::uint64_t now,bool ready,bool hostReady) noexcept {
+void publish_status(std::uint64_t now,bool ready,bool hostReady,std::uint32_t readinessBits) noexcept {
  if(!control.view||!control.acquire())return;
  ControlBlock result{};result.nativeHeartbeat=now;result.nativeIncarnation=incarnation;result.nativeContext=policy.context;
  result.ack=policy.ack;result.nativeReady=static_cast<std::uint32_t>(ready&&hostReady);result.status=policy.status;result.hover=static_cast<std::uint32_t>(policy.hovering);
+ result.readinessBits=readinessBits;
  result.hostIncarnation=hostReady?host.incarnation:0;result.hostSequence=hostReady?host.sequence:0;
  std::memcpy(control.view+64,reinterpret_cast<unsigned char*>(&result)+64,64);control.release();
 }
 }
 void start(bool hooksReady) noexcept {
  AcquireSRWLockExclusive(&gate);
- if(hooksReady&&!enabled.load()){incarnation=(static_cast<std::uint64_t>(GetCurrentProcessId())<<32)^GetTickCount64();if(!incarnation)incarnation=1;policy={};command={};legacy={};host={};lastPoll=0;sequence.store(0);spatialSequence=0;lastHover=false;lastAck=0;lastStatus=idle;enabled.store(true);}
+ if(hooksReady&&!enabled.load()){incarnation=(static_cast<std::uint64_t>(GetCurrentProcessId())<<32)^GetTickCount64();if(!incarnation)incarnation=1;policy={};command={};legacy={};host={};lastPoll=0;sequence.store(0);spatialSequence=0;lastHover=false;lastAck=0;lastStatus=idle;readinessTransitions={};enabled.store(true);}
  ReleaseSRWLockExclusive(&gate);
  core::log::write(core::log::Channel::client,core::log::Level::info,hooksReady?"ev=frontier_native stage=start abi=spatial_v2":"ev=frontier_native stage=blocked reason=movement_hooks");
 }
@@ -106,14 +108,25 @@ void tick() noexcept {
  const auto position=playerSnapshot.position;
  void* component=player::position::component();
  const bool inWorld=hooks::bootflow::in_world();
- const bool ready=guardian_ready(inWorld,component!=nullptr,
-  inWorld&&component&&hooks::teleport::owns_local_player(component),playerSnapshot);
+ const bool ownsLocal=inWorld&&component&&hooks::teleport::owns_local_player(component);
+ auto readinessBits=guardian_readiness_bits(inWorld,component!=nullptr,ownsLocal,playerSnapshot);
+ const bool ready=(readinessBits&ready_combined)!=0;
  const auto slice=hooks::bootflow::current_slice_set();
  policy.world(ready,slice.available&&slice.present?slice.index:-1,reinterpret_cast<std::uintptr_t>(component));
  const bool polling=now-lastPoll>=100;
  if(polling){lastPoll=now;poll_bridge(now,ready);poll_spatial(now,ready,position);read_control();}
  const bool hostReady=host.incarnation&&fresh(now,host.heartbeat)&&(host.flags&1U)&&!(host.flags&~31U)&&
  std::isfinite(host.playerPosition[0])&&std::isfinite(host.playerPosition[1])&&std::isfinite(host.playerPosition[2]);
+ readinessBits|=hostReady?ready_host:0U;
+ if(readinessTransitions.observe(readinessBits)){
+  core::log::writef(core::log::Channel::client,core::log::Level::info,
+   "ev=frontier_readiness bits=%u in_world=%u component_present=%u owns_local_player=%u ownership_checked=%u snapshot_present=%u position_finite=%u combined_ready=%u host_ready=%u ready=%u context=%llu tick_ms=%llu",
+   readinessBits,static_cast<unsigned>((readinessBits&ready_in_world)!=0),static_cast<unsigned>((readinessBits&ready_component)!=0),
+   static_cast<unsigned>((readinessBits&ready_ownership)!=0),static_cast<unsigned>((readinessBits&ready_ownership_checked)!=0),
+   static_cast<unsigned>((readinessBits&ready_snapshot)!=0),static_cast<unsigned>((readinessBits&ready_finite)!=0),
+   static_cast<unsigned>(ready),static_cast<unsigned>(hostReady),static_cast<unsigned>(ready&&hostReady),
+   static_cast<unsigned long long>(policy.context),static_cast<unsigned long long>(now));
+ }
  policy.tick(command,now,incarnation,ready&&hostReady,peer_live(now)&&command.epoch==legacy.header.epoch);
  // Expiry is also checked by the physics-side runtime settings accessor if camera ticks stop.
  const auto expiry=(std::min)((std::min)(command.heartbeat,legacy.header.heartbeat), (std::min)(legacy.nms.heartbeat,host.heartbeat))+timeout_ms;
@@ -122,7 +135,7 @@ void tick() noexcept {
   core::log::writef(core::log::Channel::client,core::log::Level::info,"ev=frontier_native hover=%u ack=%llu status=%u context=%llu host_seq=%u",static_cast<unsigned>(policy.hovering),static_cast<unsigned long long>(policy.ack),policy.status,static_cast<unsigned long long>(policy.context),host.sequence);
   lastHover=policy.hovering;lastAck=policy.ack;lastStatus=policy.status;
  }
- if(polling)publish_status(now,ready,hostReady);
+ if(polling)publish_status(now,ready,hostReady,readinessBits);
  ReleaseSRWLockExclusive(&gate);
 }
 void legacy_status(std::uint32_t& target,bool& connected,bool& live) noexcept {

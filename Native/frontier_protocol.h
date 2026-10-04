@@ -36,7 +36,7 @@ struct ControlBlock {
  std::uint64_t epoch,heartbeat,request,expectedIncarnation,expectedContext;
  std::uint32_t opcode,flags;
  std::uint64_t nativeHeartbeat,nativeIncarnation,nativeContext,ack;
- std::uint32_t nativeReady,status,hover,reserved;
+ std::uint32_t nativeReady,status,hover,readinessBits;
  std::uint64_t hostIncarnation,hostSequence;
 };
 static_assert(sizeof(ControlBlock)==128 && offsetof(ControlBlock,nativeHeartbeat)==64);
@@ -45,6 +45,14 @@ static_assert(offsetof(ControlBlock,epoch)==16 && offsetof(ControlBlock,heartbea
 static_assert(offsetof(ControlBlock,expectedIncarnation)==40 && offsetof(ControlBlock,expectedContext)==48 && offsetof(ControlBlock,flags)==60);
 static_assert(offsetof(ControlBlock,nativeIncarnation)==72 && offsetof(ControlBlock,nativeContext)==80 && offsetof(ControlBlock,nativeReady)==96);
 static_assert(offsetof(ControlBlock,hover)==104 && offsetof(ControlBlock,hostIncarnation)==112 && offsetof(ControlBlock,hostSequence)==120);
+static_assert(offsetof(ControlBlock,readinessBits)==108);
+// Optional diagnostic extension in the former reserved native-owned word.
+// Bit 31 marks a producer which implements this extension; zero is legacy/unknown.
+enum ReadinessBit : std::uint32_t {
+ ready_in_world=1U<<0,ready_component=1U<<1,ready_ownership=1U<<2,
+ ready_snapshot=1U<<3,ready_finite=1U<<4,ready_combined=1U<<5,
+ ready_host=1U<<6,ready_ownership_checked=1U<<7,ready_diagnostics=1U<<31
+};
 enum Opcode : std::uint32_t { none=0,hover_on=1,hover_off=2 };
 enum Status : std::uint32_t { idle=0,applied=1,rejected=2,lease_lost=3 };
 inline bool fresh(std::uint64_t now,std::uint64_t heartbeat) noexcept {

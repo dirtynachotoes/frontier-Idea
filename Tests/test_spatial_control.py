@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'Core'))
 from frontier.spatial import SpatialMapping,SLOT,HEADER,MAGIC,VERSION,SIZE
-from frontier.control import ControlMapping,CORE,NATIVE
+from frontier.control import ControlMapping,CORE,NATIVE,readiness_status,READINESS_VALID,READINESS_BITS
 class ContractTests(unittest.TestCase):
     def test_v2_roundtrip_and_owned_slots(self):
         with tempfile.TemporaryDirectory() as td:
@@ -63,3 +63,30 @@ class ContractTests(unittest.TestCase):
         sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'Tools'))
         from verify_ci_package import validate
         validate()
+
+    def test_legacy_diagnostics_are_unknown(self):
+        fields=readiness_status(0)
+        self.assertFalse(fields['readiness_diagnostics'])
+        for name in READINESS_BITS:self.assertIsNone(fields[name])
+    def test_individual_diagnostic_failures_and_guarded_ownership(self):
+        all_bits=READINESS_VALID|sum(READINESS_BITS.values())
+        self.assertTrue(all(readiness_status(all_bits)[name] for name in READINESS_BITS))
+        for name,bit in READINESS_BITS.items():
+            fields=readiness_status(all_bits&~bit)
+            if name=='ready_ownership_checked':self.assertIsNone(fields['ready_ownership'])
+            self.assertFalse(fields[name])
+    def test_status_diagnostics_are_read_only_and_do_not_submit_commands(self):
+        with tempfile.TemporaryDirectory() as td,patch('frontier.control.ticks',return_value=10000):
+            with ControlMapping(Path(td)/'control') as m:
+                m.start(1);m.refresh(1,True,True)
+                mask=READINESS_VALID|sum(READINESS_BITS.values())
+                NATIVE.pack_into(m.memory,64,10000,40,50,0,1,0,0,mask,60,70)
+                before=bytes(m.memory)
+                status=m.status()
+                self.assertTrue(status['ready_combined']);self.assertTrue(status['ready_host'])
+                self.assertEqual(status['readiness_bits'],mask)
+                self.assertEqual(bytes(m.memory),before)
+                # Publication ready remains separate from Guardian-ready diagnostics.
+                NATIVE.pack_into(m.memory,64,10000,40,50,0,0,3,0,mask&~READINESS_BITS['ready_host'],60,70)
+                status=m.status();self.assertFalse(status['ready']);self.assertTrue(status['ready_combined'])
+                self.assertFalse(status['ready_host'])

@@ -22,7 +22,7 @@ def validate():
     assert 'client::frontier::tick();' in patch and 'frontier::observe_region(' in patch
     assert 'movement::set_frontier_hover(' in native and 'player::position::component()' in native
     assert 'owns_local_player(component)' in native and 'player::position::snapshot()' in native
-    assert 'read_position(' not in native and 'guardian_ready(' in native
+    assert 'read_position(' not in native and 'guardian_readiness_bits(' in native
     assert 'CreateThread' not in native and 'edz_freeroam' not in native
     assert 'runtime_get()' in patch and 'g_frontierHoverUntil' in patch
     assert 'COMPILE_OPTIONS "/WX"' in patch

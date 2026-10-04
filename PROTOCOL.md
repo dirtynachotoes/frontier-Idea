@@ -41,7 +41,7 @@ Local\DestinyFrontier_Control_v1, 128 bytes; first/last 64 owned separately. Cor
 | opcode / flags | 56/60 |
 | native heartbeat / incarnation / context | 64/72/80 |
 | acknowledged request ID | 88 |
-| native ready / status / leased hover / reserved | 96/100/104/108 |
+| native ready / status / leased hover / readinessBits | 96/100/104/108 |
 | consumed host incarnation / sequence | 112/120 |
 
 Opcodes: 0 none, 1 hover on, 2 hover off. Status: 0 idle, 1 applied, 2 rejected, 3 lease lost. Flags: bit 0 both peers live, bit 1 Core Scout Link mode. On requires fresh host pose, local Guardian ownership/readiness, matching incarnation/context and matching live Core epoch. Off always permits safe restoration when the Core lease is valid. Unknown opcodes are rejected. Request IDs are monotonic within one Core epoch; expired or context-invalid on requests are never automatically replayed when readiness returns. Send a new F8 pulse or explicit on request to re-arm.
@@ -49,3 +49,21 @@ Opcodes: 0 none, 1 hover on, 2 hover off. Status: 0 idle, 1 applied, 2 rejected,
 A request acknowledgement means the native lease policy accepted/rejected it; it does not certify that the guest rendered, moved a requested distance, or collided against NMS terrain. Pose and consumed-host fields provide the structured return state for the next movement slice.
 
 The deadline remains 2,000 ms from publication on every dependency. Native expiry additionally uses the oldest Core/bridge/NMS/host-pose timestamp. No arbitrary hysteresis, new sleep or expanded timeout is used.
+
+## Optional native readiness diagnostics
+
+The formerly reserved uint32 at offset 108 is now readinessBits. Total size/version, mapping names, slot ownership, Spatial V2 and every existing field offset remain unchanged. Bit 31 means diagnostics are implemented. Older producers publish zero: Python reports unavailable predicates as null, not false.
+
+| Bit | Meaning |
+|---:|---|
+| 0 | in_world |
+| 1 | component present |
+| 2 | owns local Guardian |
+| 3 | snapshot present |
+| 4 | snapshot position finite (even if absent) |
+| 5 | combined Guardian readiness (AND of bits 0..4) |
+| 6 | existing hostReady predicate |
+| 7 | ownership evaluated (in-world and component present) |
+| 31 | diagnostic extension available |
+
+Ownership remains guarded by in-world/component checks; status reports it null when not evaluated. nativeReady remains Guardian combined readiness AND hostReady. Diagnostics do not gate policy or change snapshot lifetime. Native logs predicate changes on the game-thread tick; status publishes the current mask in the normal 100 ms poll. A shorter transition can appear in logs between status samples. Logs use ev=frontier_readiness and include each predicate, context and tick_ms. No grace period or deadline change was added.
