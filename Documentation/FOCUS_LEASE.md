@@ -25,3 +25,12 @@ Same as RUNTIME_ACCEPTANCE.md, plus run `FrontierSession.cmd` (Core + readiness 
 Lease ran 11 times with host W routed and native result valid. `ev=frontier_focus`: `key_calls=2025409` and `fg=0/42853` frozen for every lease, `posted=11`, `swallowed=0`. The guest polls GetForegroundWindow about once per frame and scans keys only while it believes it is active; once deactivated it stops both, so the API answers are never asked. A posted `WM_ACTIVATEAPP(TRUE)` alone did not reactivate it.
 
 Next candidate posts the full Windows activation sequence (`WM_ACTIVATEAPP`, `WM_NCACTIVATE`, `WM_ACTIVATE(WA_ACTIVE)`, `WM_SETFOCUS`) to the subclassed window and its top-level root at lease start (reverse at lease end), and logs `ev=frontier_focus_msgs` with the activation messages the subclassed procedure actually receives.
+
+## Runtime result on d608985 (2026-10-04 22:45 ET)
+Core epoch from `probe-5457201421769021220.jsonl`; Sunrise in EDZ Trostland, NMS host live, F9 armed, NMS foreground.
+
+* Lease engaged; the guest received the posted activation (`seen_activate=3`, `last_activate_word=1`) and resumed polling: `fg` answered 119 → 424 and `key_calls` rose ~5k/s while backgrounded.
+* Motion watcher: `scan_reads` 0 → 7680 across two W holds; `result valid=1`; measured Guardian displacement grew smoothly (e.g. `[0.39, 13.38, -6.82]`, later `[-2.13, 31.34, -11.93]` in host basis) and **stopped on release**.
+* This passes the first open question in GUARDIAN_LOCOMOTION.md (background authored-input scanning) with the focus lease. f6610e0 (WM_ACTIVATEAPP alone) did not.
+
+Not yet accepted: the NMS player was underwater (swim orientation), so smooth on-foot actuation still needs a flat-ground check. Destiny's own inactivity timer returned the Guardian to orbit ~2 min after landing in two sessions, and the NMS adapter heartbeat goes stale for ~2 s every 30–40 s (lease ends/restarts each time). Both are separate follow-ups.
