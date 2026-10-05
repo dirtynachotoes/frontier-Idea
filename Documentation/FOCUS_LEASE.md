@@ -20,3 +20,8 @@ This answers the first open locomotion question in GUARDIAN_LOCOMOTION.md: backg
 
 ## Acceptance
 Same as RUNTIME_ACCEPTANCE.md, plus run `FrontierSession.cmd` (Core + readiness + motion watchers) and `StartNMS.cmd`. Success = `scans` rising and nonzero `disp` in the motion watcher while W is held in NMS. If `key_calls` stays flat, the gate is not one of these seams; the `fg/active/focus` counts show which focus APIs the guest actually uses.
+
+## Run 2 result (f6610e0) and change
+Lease ran 11 times with host W routed and native result valid. `ev=frontier_focus`: `key_calls=2025409` and `fg=0/42853` frozen for every lease, `posted=11`, `swallowed=0`. The guest polls GetForegroundWindow about once per frame and scans keys only while it believes it is active; once deactivated it stops both, so the API answers are never asked. A posted `WM_ACTIVATEAPP(TRUE)` alone did not reactivate it.
+
+Next candidate posts the full Windows activation sequence (`WM_ACTIVATEAPP`, `WM_NCACTIVATE`, `WM_ACTIVATE(WA_ACTIVE)`, `WM_SETFOCUS`) to the subclassed window and its top-level root at lease start (reverse at lease end), and logs `ev=frontier_focus_msgs` with the activation messages the subclassed procedure actually receives.

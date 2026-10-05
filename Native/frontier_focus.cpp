@@ -23,6 +23,9 @@ std::atomic<HWND> gameWindow{nullptr};
 std::array<std::atomic_uint64_t,slotCount> gameCalls{};
 std::array<std::atomic_uint64_t,slotCount> answered{};
 std::atomic_uint64_t swallowed{0},posted{0};
+// Activation traffic the subclassed procedure actually sees (diagnostic, always counted).
+std::atomic_uint64_t seenActivateApp{0},seenActivate{0},seenSetFocus{0},seenKillFocus{0},seenNcActivate{0};
+std::atomic_uint64_t lastActivateWord{0};
 // Tick-thread state only.
 bool leaseWasActive=false;
 std::uint64_t lastReport=0;
@@ -78,7 +81,36 @@ bool process_is_foreground() noexcept {
 unsigned long long load(const std::atomic_uint64_t& value) noexcept {
  return static_cast<unsigned long long>(value.load(std::memory_order_relaxed));
 }
+void post(HWND window,UINT message,WPARAM word,LPARAM value) noexcept {
+ if(window!=nullptr&&PostMessageW(window,message,word,value)!=FALSE)posted.fetch_add(1,std::memory_order_relaxed);
+}
+// The full activation sequence Windows itself sends, to the subclassed window and its top-level
+// root (they can differ by display mode). Posted only: foreground is never requested or stolen.
+void activate(HWND window,bool active) noexcept {
+ if(window==nullptr)return;
+ const HWND root=GetAncestor(window,GA_ROOT);
+ const HWND targetsToTell[2]={root!=nullptr?root:window,root!=nullptr&&root!=window?window:nullptr};
+ for(HWND target:targetsToTell){
+  if(target==nullptr)continue;
+  if(active){
+   post(target,WM_ACTIVATEAPP,TRUE,0);
+   post(target,WM_NCACTIVATE,TRUE,0);
+   post(target,WM_ACTIVATE,WA_ACTIVE,0);
+   post(target,WM_SETFOCUS,0,0);
+  }else{
+   post(target,WM_KILLFOCUS,0,0);
+   post(target,WM_ACTIVATE,WA_INACTIVE,0);
+   post(target,WM_NCACTIVATE,FALSE,0);
+   post(target,WM_ACTIVATEAPP,FALSE,0);
+  }
+ }
+}
 void report(const char* stage,std::uint64_t keyCalls) noexcept {
+ const HWND window=gameWindow.load(std::memory_order_acquire);
+ const HWND root=window!=nullptr?GetAncestor(window,GA_ROOT):nullptr;
+ core::log::writef(core::log::Channel::client,core::log::Level::info,
+  "ev=frontier_focus_msgs stage=%s root_is_window=%u seen_activateapp=%llu seen_activate=%llu seen_setfocus=%llu seen_killfocus=%llu seen_ncactivate=%llu last_activate_word=%llu",
+  stage,static_cast<unsigned>(root==window),load(seenActivateApp),load(seenActivate),load(seenSetFocus),load(seenKillFocus),load(seenNcActivate),load(lastActivateWord));
  core::log::writef(core::log::Channel::client,core::log::Level::info,
   "ev=frontier_focus stage=%s installed=%u window=%u key_calls=%llu fg=%llu/%llu active=%llu/%llu focus=%llu/%llu cursor=%llu/%llu clip=%llu/%llu swallowed=%llu posted=%llu",
   stage,static_cast<unsigned>(installed.load()),static_cast<unsigned>(gameWindow.load()!=nullptr),
@@ -137,11 +169,11 @@ void set_lease(std::uint64_t until,std::uint64_t now,std::uint64_t keyCalls) noe
  const HWND window=gameWindow.load(std::memory_order_acquire);
  if(active&&!leaseWasActive){
   // The game already saw its deactivation before the host armed; tell it once it is active.
-  if(window!=nullptr&&PostMessageW(window,WM_ACTIVATEAPP,TRUE,0)!=FALSE)posted.fetch_add(1,std::memory_order_relaxed);
+  activate(window,true);
   report("lease_start",keyCalls);lastReport=now;
  }else if(!active&&leaseWasActive){
   // Return the game to its true state unless the player really put it in front meanwhile.
-  if(window!=nullptr&&!process_is_foreground()&&PostMessageW(window,WM_ACTIVATEAPP,FALSE,0)!=FALSE)posted.fetch_add(1,std::memory_order_relaxed);
+  if(!process_is_foreground())activate(window,false);
   report("lease_end",keyCalls);
  }else if(active&&now-lastReport>=2000){
   report("lease",keyCalls);lastReport=now;
@@ -150,6 +182,14 @@ void set_lease(std::uint64_t until,std::uint64_t now,std::uint64_t keyCalls) noe
 }
 bool filter_message(HWND window,UINT message,WPARAM word) noexcept {
  if(window!=nullptr&&gameWindow.load(std::memory_order_relaxed)!=window)gameWindow.store(window,std::memory_order_release);
+ switch(message){
+  case WM_ACTIVATEAPP:seenActivateApp.fetch_add(1,std::memory_order_relaxed);break;
+  case WM_ACTIVATE:seenActivate.fetch_add(1,std::memory_order_relaxed);lastActivateWord.store(static_cast<std::uint64_t>(word),std::memory_order_relaxed);break;
+  case WM_SETFOCUS:seenSetFocus.fetch_add(1,std::memory_order_relaxed);break;
+  case WM_KILLFOCUS:seenKillFocus.fetch_add(1,std::memory_order_relaxed);break;
+  case WM_NCACTIVATE:seenNcActivate.fetch_add(1,std::memory_order_relaxed);break;
+  default:break;
+ }
  if(leased_window()==nullptr)return false;
  const bool deactivation=(message==WM_ACTIVATEAPP&&word==0)||
   (message==WM_ACTIVATE&&LOWORD(word)==WA_INACTIVE)||message==WM_KILLFOCUS;
