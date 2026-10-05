@@ -18,7 +18,8 @@ Continues `Destiny_Frontier_Master_Handoff_2026-10-04.md`. Read that first for p
 | `263858e` | NMS adapter: tried writing `cTkHavokCharacterController.mTargetVelocity`. **No effect** (NMS overwrites it), so this approach was abandoned. |
 | `3d5c39a` | NMS adapter: closed-loop SetToPosition anchor with a measured offset (offset converged to `(0,-8192,-1024)`, error ≈ 0). |
 | `240e1c6` | Removed vertical-velocity feedback (it launched the player up at ~20 m/s). |
-| `f6cb0a1` | **Current.** Learns NMS's ground push-out (~0.5 m/frame) as a bounded "lift" while the Guardian is idle, and follows NMS vertical only while moving. Deployed to `MODS\frontier_spatial_probe.py` (sha256 prefix `e8e22b81`). |
+| `2a411d3` | **Current (deployed, sha256 prefix `6cd439d2`).** Holds NMS height while armed. Runtime on `f6cb0a1`: NMS adds ~+0.5 m/frame along up after every SetToPosition regardless of placement height, so the lift saturated and walking floated the player. Guardian drives horizontal only; slopes and ledges aren't followed while armed. |
+| `f6cb0a1` | Superseded. Learns NMS's ground push-out (~0.5 m/frame) as a bounded "lift" while the Guardian is idle, and follows NMS vertical only while moving. Deployed to `MODS\frontier_spatial_probe.py` (sha256 prefix `e8e22b81`). |
 
 Earlier bugs found:
 * The original fall out of the Space Anomaly was caused by the 5ee/handoff adapter. It re-based every frame on the pre-update `mGraphicsMatrix.pos` + `SetToPosition` with zero velocity. That drifts even with zero Guardian motion, because graphics and SetToPosition spaces differ by `(0,-8192,-1024)` plus physics push-out.
@@ -47,7 +48,7 @@ Earlier bugs found:
 
 ## Open issues (priority order)
 
-1. **Verify `f6cb0a1` in-game.** Expect: idle armed → stays put (lift converges in 1–2 frames). W → walks on the ground at the Guardian's pace and stops on release. Check `nms-motion.jsonl`: `lift` ≈ 0.5, `after-before` ≈ 0 when idle, `error` ≈ 0. If the player still floats, the push-out isn't constant; consider holding vertical fixed while armed (`anchor` vertical never follows) as a fallback.
+1. **Verify `2a411d3` in-game** (height held). Then the real follow-up: find why NMS adds ~0.5 m/frame upward after SetToPosition (likely its fall/ground state reset), so slopes and gravity can come back. Old note on `f6cb0a1`: Expect: idle armed → stays put (lift converges in 1–2 frames). W → walks on the ground at the Guardian's pace and stops on release. Check `nms-motion.jsonl`: `lift` ≈ 0.5, `after-before` ≈ 0 when idle, `error` ≈ 0. If the player still floats, the push-out isn't constant; consider holding vertical fixed while armed (`anchor` vertical never follows) as a fallback.
 2. **Destiny inactivity kick** returns the Guardian to orbit ~2 min after landing (seen twice). Sunrise's existing Anti-AFK isn't preventing it; investigate `hooks::inactivity`.
 3. **Destiny steals the foreground while the lease posts activation** (fullscreen same monitor). Windowed on a second monitor is the workaround. A proper fix would be suppressing game-caller SetForegroundWindow/SetWindowPos topmost during the lease.
 4. **NMS ~2 s freezes** while armed. Likely NMS pausing when it loses focus to Destiny (#3). Re-check after windowed Destiny.
