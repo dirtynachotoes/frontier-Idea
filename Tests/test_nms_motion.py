@@ -81,3 +81,16 @@ class NMSMotionTests(unittest.TestCase):
     def test_foreign_player_ignored(self):
         a,p,ptr=self.make((1,0,0));foreign=Player();a.motion_before(c.pointer(foreign),0.016)
         self.assertIsNone(a.motion_base)
+class NoVerticalFeedbackTests(NMSMotionTests):
+    def test_upward_push_is_not_amplified(self):
+        a,p,ptr=self.make((0,0,0))
+        speeds=[]
+        orig=Player.SetToPosition
+        def capture(self_,pp,d,v):
+            speeds.append(c.cast(v,c.POINTER(V)).contents.y);orig(self_,pp,d,v)
+        Player.SetToPosition=capture
+        try:
+            for _ in range(30):self.frame(a,p,ptr,host_step=(0,0.05,0))  # small engine push-out each frame
+        finally:Player.SetToPosition=orig
+        self.assertTrue(all(s==0 for s in speeds))
+        self.assertLess(p.mPosition.y-20,30*0.05+0.01)  # grows linearly at most, never exponentially

@@ -186,8 +186,9 @@ class DestinyFrontierNMSSpatialProbe(Mod):
             if not all(math.isfinite(v) for v in command):self.motion_reset();return
             position=basic.cTkBigPos.from_buffer_copy(graphics)
             position.local.x,position.local.y,position.local.z=command
-            own_vertical=dot(sub(after,before),up)/lfStep if lfStep and lfStep>0 else 0.0
-            vel=add(velocity,scale(up,own_vertical))
+            # Horizontal Guardian velocity only. Feeding NMS's own vertical speed back in was a positive
+            # feedback loop (runtime 2026-10-04: player launched upward ~20 m/s through the ceiling).
+            vel=velocity
             direction=basic.cTkVector3(-player.mGraphicsMatrix.at.x,-player.mGraphicsMatrix.at.y,-player.mGraphicsMatrix.at.z)
             speed=basic.cTkVector3(*vel)
             player.SetToPosition(ctypes.byref(position),ctypes.byref(direction),ctypes.byref(speed))
