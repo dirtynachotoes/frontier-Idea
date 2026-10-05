@@ -104,8 +104,9 @@ class DestinyFrontierNMSSpatialProbe(Mod):
     # and the SetToPosition offset is measured from the observed result each frame, so no error builds up.
     MOTION_WINDOW_S=0.15
     MOTION_RESET_M=5.0
+    MOTION_LIFT_LIMIT_M=2.0
     def motion_reset(self):
-        self.motion_anchor=None;self.motion_offset=None;self.motion_last_target=None
+        self.motion_anchor=None;self.motion_offset=None;self.motion_last_target=None;self.motion_lift=0.0
         samples=getattr(self,'motion_samples',None)
         if samples is not None:samples.clear()
     @staticmethod
@@ -174,15 +175,24 @@ class DestinyFrontierNMSSpatialProbe(Mod):
                     self.motion_host.close();self.motion_host=None;self.motion_reset()
                     log.warning('Guardian locomotion disarmed: host position jumped %.2f m',math.sqrt(dot(error,error)))
                     return
+            lift=getattr(self,'motion_lift',0.0)
             if anchor is None:
-                anchor=before
+                anchor=before;lift=0.0
                 offset=sub((graphics.local.x,graphics.local.y,graphics.local.z),before)
             elif error is not None:
                 offset=sub(offset,error)
-            # Guardian supplies horizontal motion; NMS keeps its own vertical (gravity, ground, slopes).
+            # NMS pushes a re-placed player out of the ground by a fixed amount every frame (runtime
+            # 2026-10-04: ~0.5 m/frame, so following it floated the player straight up). While the
+            # Guardian stands still, learn that push-out as a lift so NMS stops pushing; while it moves,
+            # follow NMS's own vertical change (slopes, gravity) with the learned lift held.
+            vertical=dot(sub(after,before),up)
+            if any(step):
+                anchor=add(anchor,scale(up,vertical))
+            else:
+                lift=max(-self.MOTION_LIFT_LIMIT_M,min(self.MOTION_LIFT_LIMIT_M,lift+vertical))
             anchor=add(anchor,step)
-            anchor=add(anchor,scale(up,dot(sub(after,before),up)))  # NMS's own vertical change this frame only
-            command=add(anchor,offset)
+            expected=add(anchor,scale(up,lift))
+            command=add(expected,offset)
             if not all(math.isfinite(v) for v in command):self.motion_reset();return
             position=basic.cTkBigPos.from_buffer_copy(graphics)
             position.local.x,position.local.y,position.local.z=command
@@ -192,13 +202,13 @@ class DestinyFrontierNMSSpatialProbe(Mod):
             direction=basic.cTkVector3(-player.mGraphicsMatrix.at.x,-player.mGraphicsMatrix.at.y,-player.mGraphicsMatrix.at.z)
             speed=basic.cTkVector3(*vel)
             player.SetToPosition(ctypes.byref(position),ctypes.byref(direction),ctypes.byref(speed))
-            self.motion_anchor=anchor;self.motion_offset=offset;self.motion_last_target=anchor
-            self.motion_trace(step,velocity,before,after,anchor,offset,error)
+            self.motion_anchor=anchor;self.motion_offset=offset;self.motion_last_target=expected;self.motion_lift=lift
+            self.motion_trace(step,velocity,before,after,anchor,offset,error,lift)
         except Exception:
             if self.motion_host:self.motion_host.close()
             self.motion_host=None;self.motion_reset()
             log.exception('NMS result actuation failed; locomotion disarmed, normal input resumes')
-    def motion_trace(self,step,velocity,before,after,anchor,offset,error):
+    def motion_trace(self,step,velocity,before,after,anchor,offset,error,lift=0.0):
         now=time.monotonic()
         if now-getattr(self,'last_trace',0)<0.2:return
         self.last_trace=now
@@ -207,6 +217,6 @@ class DestinyFrontierNMSSpatialProbe(Mod):
             path=Path(frontier.__file__).resolve().parents[2]/'Saves'/'Guardian_Test'/'Logs'/'nms-motion.jsonl'
             r=lambda v:None if v is None else [round(x,3) for x in v]
             with open(path,'a',encoding='utf-8') as f:
-                f.write(json.dumps(dict(utc=time.time(),mode='anchor',step=r(step),velocity=r(velocity),before=r(before),after=r(after),anchor=r(anchor),offset=r(offset),error=r(error)))+'\n')
+                f.write(json.dumps(dict(utc=time.time(),mode='anchor',step=r(step),velocity=r(velocity),before=r(before),after=r(after),anchor=r(anchor),offset=r(offset),error=r(error),lift=round(lift,3)))+'\n')
         except Exception:
             pass

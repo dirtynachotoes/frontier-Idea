@@ -94,3 +94,19 @@ class NoVerticalFeedbackTests(NMSMotionTests):
         finally:Player.SetToPosition=orig
         self.assertTrue(all(s==0 for s in speeds))
         self.assertLess(p.mPosition.y-20,30*0.05+0.01)  # grows linearly at most, never exponentially
+
+class GroundPushOutTests(NMSMotionTests):
+    def push_frame(self,a,p,ptr):
+        # Fake engine: a re-placed player rests 0.5 m above where it was put, and is pushed there.
+        a.motion_before(ptr,0.016)
+        placed=getattr(p,'commands',0)>0
+        x,y,z=p.mPosition.x,p.mPosition.y,p.mPosition.z
+        if placed and y<self.rest+0.5:p.place((x,self.rest+0.5,z))
+        a.motion_after(ptr,0.016)
+    def test_constant_push_out_is_learned_not_followed_upward(self):
+        a,p,ptr=self.make((0,0,0));self.rest=20.0
+        heights=[]
+        for _ in range(120):
+            self.push_frame(a,p,ptr);heights.append(p.mPosition.y)
+        self.assertLess(max(heights),21.0)
+        self.assertAlmostEqual(heights[-1],heights[-30],places=3)
