@@ -185,11 +185,11 @@ class DestinyFrontierNMSSpatialProbe(Mod):
             # 2026-10-04: ~0.5 m/frame, so following it floated the player straight up). While the
             # Guardian stands still, learn that push-out as a lift so NMS stops pushing; while it moves,
             # follow NMS's own vertical change (slopes, gravity) with the learned lift held.
-            vertical=dot(sub(after,before),up)
-            if any(step):
-                anchor=add(anchor,scale(up,vertical))
-            else:
-                lift=max(-self.MOTION_LIFT_LIMIT_M,min(self.MOTION_LIFT_LIMIT_M,lift+vertical))
+            # Runtime 2026-10-04 (f6cb0a1): after every SetToPosition NMS's own Update adds ~+0.5 m along
+            # up per frame regardless of placement height (lift saturated at its limit and the push
+            # stayed), so following NMS vertical floats the player. Height is held while armed: the
+            # Guardian drives horizontal motion only. Slopes/ledges are not followed in this mode.
+            lift=0.0
             anchor=add(anchor,step)
             expected=add(anchor,scale(up,lift))
             command=add(expected,offset)

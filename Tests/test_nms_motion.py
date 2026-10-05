@@ -57,11 +57,11 @@ class NMSMotionTests(unittest.TestCase):
         self.frame(a,p,ptr)  # first frame calibrates the unknown offset
         for _ in range(10):self.frame(a,p,ptr)
         self.assertEqual(self.pos(p),(11.1,20,30))
-    def test_host_own_horizontal_input_is_replaced_but_gravity_kept(self):
+    def test_host_own_motion_is_replaced_and_height_held_while_armed(self):
         a,p,ptr=self.make((0,0,0))
         for _ in range(10):self.frame(a,p,ptr,host_step=(0.3,-0.05,0))
         x,y,z=self.pos(p)
-        self.assertAlmostEqual(x,10,places=2);self.assertAlmostEqual(z,30,places=2);self.assertLess(y,20)
+        self.assertAlmostEqual(x,10,places=2);self.assertAlmostEqual(z,30,places=2);self.assertAlmostEqual(y,20,places=2)
     def test_absent_guest_result_never_acts(self):
         a,p,ptr=self.make(None);self.frame(a,p,ptr)
         self.assertFalse(hasattr(p,'commands'))
@@ -110,3 +110,11 @@ class GroundPushOutTests(NMSMotionTests):
             self.push_frame(a,p,ptr);heights.append(p.mPosition.y)
         self.assertLess(max(heights),21.0)
         self.assertAlmostEqual(heights[-1],heights[-30],places=3)
+
+class HeightHoldTests(NMSMotionTests):
+    def test_constant_engine_up_push_never_lifts_player_while_walking(self):
+        a,p,ptr=self.make((0.08,0,0))
+        for _ in range(120):self.frame(a,p,ptr,host_step=(0,0.5,0))  # engine adds +0.5 m/frame
+        x,y,z=self.pos(p)
+        self.assertLess(abs(y-20),0.6)  # one frame of push at most, never accumulated
+        self.assertGreater(x,15)
