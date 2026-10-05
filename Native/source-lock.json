@@ -11,6 +11,7 @@
     "Sunrise/src/client/hooks/fly/fly.cpp": "daf1aba0eaa7ad3f1da11c5e98752893d6dd7367f419d751666988b28fa44cbf",
     "Sunrise/src/server/activity/mission/mission_script_lua_sandbox.cpp": "8d08e50f41117e40e261a853af2b3ad784f04bce59586257efeb6ad815bb856c",
     "CMakeLists.txt": "627cb665fd87f04b6ded2eff32da03c4c856aa47fca4c7c8261b268697e808dd",
-    "Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp": "45219b20d01b62cb99ead0e5065a90800d3ccf310296f9042ab6edcf3bdf55b8"
+    "Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp": "45219b20d01b62cb99ead0e5065a90800d3ccf310296f9042ab6edcf3bdf55b8",
+    "Sunrise/src/client/hooks/graphics/input/graphics_window_input.cpp": "abb2712ae7805daf13ffee3e748c8246791951a7b0e89d4cedcd624846f38c2b"
   }
 }

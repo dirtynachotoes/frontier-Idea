@@ -3,6 +3,7 @@
 #include "frontier_policy.h"
 #include "frontier_readiness.h"
 #include "frontier_motion.h"
+#include "frontier_focus.h"
 #include <Windows.h>
 #include <atomic>
 #include <algorithm>
@@ -38,7 +39,8 @@ Region bridge,spatial,control,motion;
 SRWLOCK motionKeysGate=SRWLOCK_INIT;
 destiny_frontier::MotionKeys motionKeys;
 destiny_frontier::MotionAccumulator motionAccumulator;
-std::atomic_uint64_t motionScanReads{0};
+std::atomic_uint64_t motionScanReads{0},motionKeyCalls{0};
+std::uint64_t focusLeaseUntil=0;
 std::uint64_t motionSequence=0;
 MotionHeader motionHeader{};MotionIntent motionIntent{};
 SRWLOCK gate=SRWLOCK_INIT;
@@ -136,6 +138,8 @@ void poll_motion(std::uint64_t now,bool ready,bool hostReady,const hooks::telepo
  AcquireSRWLockExclusive(&motionKeysGate);motionKeys=nextKeys;ReleaseSRWLockExclusive(&motionKeysGate);
  bool resultValid=valid&&motionAccumulator.sample(header.epoch,intent.incarnation,policy.context,position,pose.forward,host);
  if(!resultValid){motionAccumulator.reset();AcquireSRWLockExclusive(&motionKeysGate);motionKeys={};ReleaseSRWLockExclusive(&motionKeysGate);}
+ // Focus lease shares the exact motion lease: same validity, same bounded expiry.
+ focusLeaseUntil=resultValid?nextKeys.until:0;
  if(motion.view&&motion.acquire()){
   MotionHeader current{};std::memcpy(&current,motion.view,64);
   MotionResult result{};result.heartbeat=now;result.incarnation=incarnation;result.context=policy.context;
@@ -151,6 +155,7 @@ void start(bool hooksReady) noexcept {
  AcquireSRWLockExclusive(&gate);
  if(hooksReady&&!enabled.load()){incarnation=(static_cast<std::uint64_t>(GetCurrentProcessId())<<32)^GetTickCount64();if(!incarnation)incarnation=1;policy={};command={};legacy={};host={};lastPoll=0;sequence.store(0);spatialSequence=0;lastHover=false;lastAck=0;lastStatus=idle;readinessTransitions={};enabled.store(true);}
  ReleaseSRWLockExclusive(&gate);
+ if(hooksReady)(void)focus::install();
  core::log::write(core::log::Channel::client,core::log::Level::info,hooksReady?"ev=frontier_native stage=start abi=spatial_v2":"ev=frontier_native stage=blocked reason=movement_hooks");
 }
 void observe_region(bool has_current,int current,int held,int previous) noexcept {
@@ -194,6 +199,7 @@ void tick() noexcept {
   lastHover=policy.hovering;lastAck=policy.ack;lastStatus=policy.status;
  }
  poll_motion(now,ready,hostReady,position);
+ focus::set_lease(focusLeaseUntil,now,motionKeyCalls.load(std::memory_order_relaxed));
  if(polling)publish_status(now,ready,hostReady,readinessBits);
  ReleaseSRWLockExclusive(&gate);
 }
@@ -201,6 +207,7 @@ void legacy_status(std::uint32_t& target,bool& connected,bool& live) noexcept {
  target=cachedTarget.load();connected=enabled.load()&&cachedConnected.load()&&GetTickCount64()<cachedUntil.load();live=connected&&cachedLive.load();
 }
 bool motion_key(unsigned virtualKey,bool& held) noexcept {
+ motionKeyCalls.fetch_add(1,std::memory_order_relaxed);
  if(!TryAcquireSRWLockShared(&motionKeysGate))return false;
  const bool overrideKey=motionKeys.answer(virtualKey,GetTickCount64(),held);
  ReleaseSRWLockShared(&motionKeysGate);
@@ -209,6 +216,7 @@ bool motion_key(unsigned virtualKey,bool& held) noexcept {
 }
 void shutdown() noexcept {
  enabled.store(false);AcquireSRWLockExclusive(&gate);
+ focus::set_lease(0,GetTickCount64(),motionKeyCalls.load(std::memory_order_relaxed));focus::uninstall();focusLeaseUntil=0;
  AcquireSRWLockExclusive(&motionKeysGate);motionKeys={};ReleaseSRWLockExclusive(&motionKeysGate);motionAccumulator.reset();
  movement::set_frontier_hover(false,0);cachedConnected.store(false);cachedLive.store(false);cachedUntil.store(0);
  if(control.view&&control.acquire()){std::memset(control.view+64,0,64);control.release();}

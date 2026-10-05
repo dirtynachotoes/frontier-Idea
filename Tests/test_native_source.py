@@ -63,3 +63,19 @@ class NativeSourceTests(unittest.TestCase):
         for forbidden in ('SendInput','SetForegroundWindow','WriteProcessMemory','CreateThread'):
             self.assertNotIn(forbidden,native)
         self.assertNotIn('edz_freeroam',native)
+
+class FocusLeaseTests(unittest.TestCase):
+    def test_focus_lease_is_game_caller_only_and_tied_to_motion_lease(self):
+        focus=(ROOT/'Native/frontier_focus.cpp').read_text(encoding='utf-8')
+        native=(ROOT/'Native/frontier_native.cpp').read_text(encoding='utf-8')
+        patch=(ROOT/'Native/Sunrise.patch').read_text(encoding='utf-8')
+        # Only game-image callers are answered; real state otherwise.
+        self.assertIn('from_game(_ReturnAddress())',focus)
+        self.assertIn('if(until==0||GetTickCount64()>=until)return nullptr;',focus)
+        # Lease is exactly the motion lease: same validity and bounded expiry.
+        self.assertIn('focusLeaseUntil=resultValid?nextKeys.until:0;',native)
+        self.assertIn('focus::set_lease(focusLeaseUntil,now,',native)
+        self.assertIn('focus::uninstall();',native)
+        self.assertIn('client::frontier::focus::filter_message(window, message, word)',patch)
+        for forbidden in ('SetForegroundWindow','SendInput','keybd_event','BringWindowToTop','AttachThreadInput','CreateThread'):
+            self.assertNotIn(forbidden,focus)

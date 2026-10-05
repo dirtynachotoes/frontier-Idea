@@ -1,8 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c417a9c..e9dac3b 100644
+index c417a9c..b8dba91 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -137,3 +137,9 @@ set_target_properties(steam_api64 PROPERTIES
+@@ -137,3 +137,11 @@ set_target_properties(steam_api64 PROPERTIES
  set_source_files_properties(Sunrise/vendor/sqlite/sqlite3.c PROPERTIES
      COMPILE_DEFINITIONS "SQLITE_OMIT_LOAD_EXTENSION;SQLITE_THREADSAFE=1"
  )
@@ -10,6 +10,8 @@ index c417a9c..e9dac3b 100644
 +# Frontier native code: compiler warnings must never become a publishable candidate.
 +if(MSVC)
 +    set_source_files_properties("Sunrise/src/client/frontier/frontier_native.cpp"
++        PROPERTIES COMPILE_OPTIONS "/WX")
++    set_source_files_properties("Sunrise/src/client/frontier/frontier_focus.cpp"
 +        PROPERTIES COMPILE_OPTIONS "/WX")
 +endif()
 diff --git a/Sunrise/src/client/hooks/fly/fly.cpp b/Sunrise/src/client/hooks/fly/fly.cpp
@@ -43,6 +45,29 @@ index 6da2da4..cf583aa 100644
      noclip::Vector position{};
      noclip::read_body_position(body, position);
      g_heightBeforeStep = position[teleport::kVerticalLane];
+diff --git a/Sunrise/src/client/hooks/graphics/input/graphics_window_input.cpp b/Sunrise/src/client/hooks/graphics/input/graphics_window_input.cpp
+index 771120e..a6bfd7d 100644
+--- a/Sunrise/src/client/hooks/graphics/input/graphics_window_input.cpp
++++ b/Sunrise/src/client/hooks/graphics/input/graphics_window_input.cpp
+@@ -10,6 +10,7 @@
+ #include "../renderer/renderer.h"
+ #include "core/threading/srw_lock.h"
+ #include "input.h"
++#include "../../../frontier/frontier_focus.h"
+ 
+ namespace sunrise::client::hooks::graphics::input {
+ namespace {
+@@ -83,6 +84,10 @@ forward(WNDPROC original, HWND window, UINT message, WPARAM word, LPARAM value)
+ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM word, LPARAM value) noexcept {
+     const CallbackGuard callbackGuard;
+     const WNDPROC original = original_for(window);
++    // Frontier focus lease: hold back deactivation only while an armed motion lease is live.
++    if (client::frontier::focus::filter_message(window, message, word)) {
++        return 0;
++    }
+     if (message == kRequiredForwardMessage) {
+         const LRESULT result = forward(original, window, message, word, value);
+         // Presentation locks are released first, because a deferred action can re-enter here.
 diff --git a/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp b/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp
 index 497373d..eb86630 100644
 --- a/Sunrise/src/client/hooks/polled_input/polled_input_replacements.cpp
