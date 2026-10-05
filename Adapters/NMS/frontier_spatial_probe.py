@@ -96,6 +96,10 @@ class DestinyFrontierNMSSpatialProbe(Mod):
     def motion_position_seam(self,this,lPos,lDir,lVel):
         # Registers the maintained typed method; no raw function addresses or offsets.
         pass
+    # Guardian displacement drives NMS through its own character controller velocity, never by
+    # teleporting: NMS keeps its gravity, floors and collision, so a Guardian walking downhill in its
+    # own activity can no longer push the NMS player through the floor (seen 2026-10-04).
+    MOTION_WINDOW_S=0.15
     @nms.cGcPlayer.Update.before
     def motion_before(self,this,lfStep):
         self.motion_base=None
@@ -110,16 +114,25 @@ class DestinyFrontierNMSSpatialProbe(Mod):
             if self.motion_host.armed!=self.last_motion_armed:
                 log.info('Guardian locomotion armed=%s (F9); native displacement only',self.motion_host.armed)
                 self.last_motion_armed=self.motion_host.armed
-            if delta is None or not player.mbSpawned or player.mbIsTransitioning or player.mbIsDying:return
-            # Preserve the engine's explicit local/offset representation; never treat a plain
-            # player-position vector as an absolute cTkBigPos.
-            base=basic.cTkBigPos.from_buffer_copy(player.mGraphicsMatrix.pos)
-            for lane,change in zip(('x','y','z'),delta):setattr(base.local,lane,getattr(base.local,lane)+change)
-            direction=basic.cTkVector3(-player.mGraphicsMatrix.at.x,-player.mGraphicsMatrix.at.y,-player.mGraphicsMatrix.at.z)
-            self.motion_base=(base,direction,self.motion_host.valid_until)
+            samples=getattr(self,'motion_samples',None)
+            if samples is None:samples=self.motion_samples=[]
+            if delta is None or not player.mbSpawned or player.mbIsTransitioning or player.mbIsDying:
+                samples.clear();return
+            now=time.monotonic()
+            if any(delta):samples.append((now,tuple(delta)))
+            samples[:]=[s for s in samples if now-s[0]<=self.MOTION_WINDOW_S]
+            up=(player.mGraphicsMatrix.up.x,player.mGraphicsMatrix.up.y,player.mGraphicsMatrix.up.z)
+            length=math.sqrt(sum(v*v for v in up))
+            if not math.isfinite(length) or length<=0:return
+            up=tuple(v/length for v in up)
+            velocity=[sum(s[1][lane] for s in samples)/self.MOTION_WINDOW_S for lane in range(3)]
+            along=sum(a*b for a,b in zip(velocity,up))
+            horizontal=tuple(velocity[lane]-along*up[lane] for lane in range(3))
+            if not all(math.isfinite(v) for v in horizontal):return
+            self.motion_base=(horizontal,up,self.motion_host.valid_until)
             if any(delta) and time.monotonic()-self.last_motion_log>=1:
                 self.last_motion_log=time.monotonic()
-                log.info('Guardian result queued delta=%s input_scan_reads=%s',delta,self.motion_host.last_result[8])
+                log.info('Guardian velocity queued horizontal=%s input_scan_reads=%s',horizontal,self.motion_host.last_result[8])
         except Exception:
             if self.motion_host:self.motion_host.close()
             self.motion_host=None;self.motion_base=None
@@ -131,11 +144,28 @@ class DestinyFrontierNMSSpatialProbe(Mod):
         player=gameData.player
         if player is None or ctypes.addressof(player)!=ctypes.addressof(this.contents):return
         try:
-            position,direction,expiry=target
+            horizontal,up,expiry=target
             if ticks()>=expiry or not self.motion_host.keys.focused() or not player.mbSpawned or player.mbIsTransitioning or player.mbIsDying:return
-            velocity=basic.cTkVector3(0,0,0)
-            player.SetToPosition(ctypes.byref(position),ctypes.byref(direction),ctypes.byref(velocity))
+            controller=player.mPhysicsController
+            if not controller:return
+            wanted=controller.contents.mTargetVelocity
+            # Keep NMS's own vertical (gravity, jump, slopes); replace only the horizontal intent.
+            own=wanted.x*up[0]+wanted.y*up[1]+wanted.z*up[2]
+            wanted.x=horizontal[0]+own*up[0];wanted.y=horizontal[1]+own*up[1];wanted.z=horizontal[2]+own*up[2]
+            self.motion_trace(player,horizontal,own)
         except Exception:
             if self.motion_host:self.motion_host.close()
             self.motion_host=None
             log.exception('NMS result actuation failed; locomotion disarmed, normal input resumes')
+    def motion_trace(self,player,horizontal,own):
+        now=time.monotonic()
+        if now-getattr(self,'last_trace',0)<0.25:return
+        self.last_trace=now
+        try:
+            import frontier
+            path=Path(frontier.__file__).resolve().parents[2]/'Saves'/'Guardian_Test'/'Logs'/'nms-motion.jsonl'
+            p=player.mPosition
+            with open(path,'a',encoding='utf-8') as f:
+                f.write(json.dumps(dict(utc=time.time(),horizontal=[round(v,3) for v in horizontal],own_vertical=round(own,3),position=[round(p.x,3),round(p.y,3),round(p.z,3)]))+'\n')
+        except Exception:
+            pass
