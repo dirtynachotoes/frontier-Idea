@@ -28,7 +28,7 @@ Earlier bugs found:
 ## How to run a session (canonical root `C:\Users\Me yo\Downloads\DestinyFrontier-research-probe-windows-fixed\DestinyFrontier`)
 
 1. `FrontierSession.cmd`: preflight (refuses a 2nd Core), then Core (`StartGuardianLocomotion.cmd`), plus readiness and motion watchers.
-2. Launch `D:\Games\Destiny 2\destiny2.exe`. Load a destination (EDZ Trostland works) and walk 2–3 s once. **Set Destiny to Windowed on the second monitor.** Fullscreen on the same monitor makes Destiny grab the front when the lease posts activation, which also causes the ~2 s NMS freezes.
+2. Launch `D:\Games\Destiny 2\destiny2.exe`. Load a destination (EDZ Trostland works) and walk 2–3 s once. **Set Destiny to Windowed on the second monitor.** Fullscreen on the same monitor makes Destiny grab the front when the lease posts activation.
 3. `StartNMS.cmd` (pyMHF `run nmspy` from `.venv-nms` with Core on PYTHONPATH). Load the save and stand on flat ground. NMS menus need the user's mouse (the in-game cursor doesn't follow automation).
 4. In NMS: F9 (arm), hold W, release, F9 (disarm).
 
@@ -51,6 +51,6 @@ Earlier bugs found:
 1. **Verify `2a411d3` in-game** (height held). Then the real follow-up: find why NMS adds ~0.5 m/frame upward after SetToPosition (likely its fall/ground state reset), so slopes and gravity can come back. Old note on `f6cb0a1`: Expect: idle armed → stays put (lift converges in 1–2 frames). W → walks on the ground at the Guardian's pace and stops on release. Check `nms-motion.jsonl`: `lift` ≈ 0.5, `after-before` ≈ 0 when idle, `error` ≈ 0. If the player still floats, the push-out isn't constant; consider holding vertical fixed while armed (`anchor` vertical never follows) as a fallback.
 2. **Destiny inactivity kick** returns the Guardian to orbit ~2 min after landing (seen twice). Sunrise's existing Anti-AFK isn't preventing it; investigate `hooks::inactivity`.
 3. **Destiny steals the foreground while the lease posts activation** (fullscreen same monitor). Windowed on a second monitor is the workaround. A proper fix would be suppressing game-caller SetForegroundWindow/SetWindowPos topmost during the lease.
-4. **NMS ~2 s freezes** while armed. Likely NMS pausing when it loses focus to Destiny (#3). Re-check after windowed Destiny.
+4. **NMS ~2 s freezes:** the user confirms these are a pre-existing NMS issue that happens without Frontier, so they're not a Frontier bug. Effect on Frontier: Core marks NMS stale after 2 s and F9 disarms, so re-press F9 after a freeze. A possible later improvement is to keep the arm state across a short host stall instead of disarming.
 5. Housekeeping: `Documentation/CANDIDATE_HASHES.json` in the installed root no longer matches the hot-copied adapter. Rebuild a candidate once the adapter is accepted. The handoff rule "no foreground spoofing" was knowingly relaxed by the user (option chosen: "Focus override").
 6. Some files appeared that this handoff's author didn't write (`WatchSpatial.cmd`, `Tools/watch_spatial.py`, commit `d608985` came from a parallel turn of the same session). They're harmless diagnostics.
